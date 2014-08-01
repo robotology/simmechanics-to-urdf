@@ -3,11 +3,11 @@
 import sys
 
 import xml.dom.minidom
-from xml.dom.minidom import Document
+import lxml.etree
 import math
 import numpy    #for creating matrix to convert to quaternion
 import yaml
-import urdf_parser_py
+import urdf_parser_py.urdf
 
 # Conversion Factors
 INCH2METER = 0.0254
@@ -24,6 +24,93 @@ COLORS =[("green", (0, 1, 0, 1)), ("black", (0, 0, 0, 1)), ("red", (1, 0, 0, 1))
      ("cyan", (0, 1, 1, 1)), ("green", (0, 1, 0, 1)), ("white", (1, 1, 1, 1)),
      ("dblue", (0, 0, .8, 1)), ("dgreen", (.1, .8, .1, 1)), ("gray", (.5, .5, .5, 1))]
 
+# epsilon for testing whether a number is close to zero
+_EPS = numpy.finfo(float).eps * 4.0
+
+# axis sequences for Euler angles
+_NEXT_AXIS = [1, 2, 0, 1]
+
+# map axes strings to/from tuples of inner axis, parity, repetition, frame
+_AXES2TUPLE = {
+    'sxyz': (0, 0, 0, 0), 'sxyx': (0, 0, 1, 0), 'sxzy': (0, 1, 0, 0),
+    'sxzx': (0, 1, 1, 0), 'syzx': (1, 0, 0, 0), 'syzy': (1, 0, 1, 0),
+    'syxz': (1, 1, 0, 0), 'syxy': (1, 1, 1, 0), 'szxy': (2, 0, 0, 0),
+    'szxz': (2, 0, 1, 0), 'szyx': (2, 1, 0, 0), 'szyz': (2, 1, 1, 0),
+    'rzyx': (0, 0, 0, 1), 'rxyx': (0, 0, 1, 1), 'ryzx': (0, 1, 0, 1),
+    'rxzx': (0, 1, 1, 1), 'rxzy': (1, 0, 0, 1), 'ryzy': (1, 0, 1, 1),
+    'rzxy': (1, 1, 0, 1), 'ryxy': (1, 1, 1, 1), 'ryxz': (2, 0, 0, 1),
+    'rzxz': (2, 0, 1, 1), 'rxyz': (2, 1, 0, 1), 'rzyz': (2, 1, 1, 1)}
+
+_TUPLE2AXES = dict((v, k) for k, v in _AXES2TUPLE.items())
+
+def euler_from_matrix(matrix, axes='sxyz'):
+    """Return Euler angles from rotation matrix for specified axis sequence.
+
+    axes : One of 24 axis sequences as string or encoded tuple
+
+    Note that many Euler angle triplets can describe one matrix.
+
+    >>> R0 = euler_matrix(1, 2, 3, 'syxz')
+    >>> al, be, ga = euler_from_matrix(R0, 'syxz')
+    >>> R1 = euler_matrix(al, be, ga, 'syxz')
+    >>> numpy.allclose(R0, R1)
+    True
+    >>> angles = (4*math.pi) * (numpy.random.random(3) - 0.5)
+    >>> for axes in _AXES2TUPLE.keys():
+    ...    R0 = euler_matrix(axes=axes, *angles)
+    ...    R1 = euler_matrix(axes=axes, *euler_from_matrix(R0, axes))
+    ...    if not numpy.allclose(R0, R1): print(axes, "failed")
+
+    """
+    try:
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes.lower()]
+    except (AttributeError, KeyError):
+        _TUPLE2AXES[axes]  # validation
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis
+    j = _NEXT_AXIS[i+parity]
+    k = _NEXT_AXIS[i-parity+1]
+
+    M = numpy.array(matrix, dtype=numpy.float64, copy=False)[:3, :3]
+    if repetition:
+        sy = math.sqrt(M[i, j]*M[i, j] + M[i, k]*M[i, k])
+        if sy > _EPS:
+            ax = math.atan2( M[i, j],  M[i, k])
+            ay = math.atan2( sy,       M[i, i])
+            az = math.atan2( M[j, i], -M[k, i])
+        else:
+            ax = math.atan2(-M[j, k],  M[j, j])
+            ay = math.atan2( sy,       M[i, i])
+            az = 0.0
+    else:
+        cy = math.sqrt(M[i, i]*M[i, i] + M[j, i]*M[j, i])
+        if cy > _EPS:
+            ax = math.atan2( M[k, j],  M[k, k])
+            ay = math.atan2(-M[k, i],  cy)
+            az = math.atan2( M[j, i],  M[i, i])
+        else:
+            ax = math.atan2(-M[j, k],  M[j, j])
+            ay = math.atan2(-M[k, i],  cy)
+            az = 0.0
+
+    if parity:
+        ax, ay, az = -ax, -ay, -az
+    if frame:
+        ax, az = az, ax
+    return ax, ay, az
+
+
+def euler_from_quaternion(quaternion, axes='sxyz'):
+    """Return Euler angles from quaternion for specified axis sequence.
+
+    >>> angles = euler_from_quaternion([0.99810947, 0.06146124, 0, 0])
+    >>> numpy.allclose(angles, [0.123, 0, 0])
+    True
+
+    """
+    return euler_from_matrix(quaternion_matrix(quaternion), axes)
+
 class Converter:
     def __init__(self):
         # initialize member variables
@@ -35,7 +122,7 @@ class Converter:
         self.colorindex = 0
         self.usedcolors = {}
 
-        Start the Custom Transform Manager
+        #Start the Custom Transform Manager
         self.tfman = CustomTransformManager()
 
         # Extra Transforms for Debugging
@@ -56,11 +143,12 @@ class Converter:
 
         # output the output
         if mode == "xml":
-            print self.result.to_xml()
+            #print("URDF model to print : \n " + str(self.result) + "\n" )
+            print lxml.etree.tostring(self.result.to_xml(),pretty_print=True)
         if mode == "graph":
             print self.graph()
-        if mode == "groups":
-            print self.groups(root)
+        #if mode == "groups":
+        #    print self.groups(root)
 
     def parseConfig(self, configFile):
         """Parse the Configuration File, if it exists.
@@ -216,6 +304,7 @@ class Converter:
             joint['type'] = jdict.get('type', 'continuous')
 
             if 'axis' in jdict:
+                print("axis" + str(jdict['axis']))
                 joint['axis'] = jdict['axis']
             if 'limits' in jdict:
                 joint['limits'] = jdict['limits']
@@ -296,7 +385,7 @@ class Converter:
     def output(self, rootid):
         """Creates the URDF from the parsed document.
            Makes the document and starts the recursive build process"""
-        self.result = URDF(self.name)
+        self.result = urdf_parser_py.urdf.URDF(self.name)
         self.outputLink(rootid)
         self.processLink(rootid)
 
@@ -319,9 +408,9 @@ class Converter:
         if linkdict['name'] == "RootPart":
             return
 
-        visual = Visual()
-        inertial = Inertial()
-        collision = Collision()
+        visual = urdf_parser_py.urdf.Visual()
+        inertial = urdf_parser_py.urdf.Inertial()
+        collision = urdf_parser_py.urdf.Collision()
 
         # Define Geometry
         filename = linkdict['geometryFileName']
@@ -329,7 +418,7 @@ class Converter:
             filename = filename.lower()
         filename = self.filenameformat % filename
 
-        visual.geometry = Mesh(filename, self.scale)
+        visual.geometry = urdf_parser_py.urdf.Mesh(filename, self.scale)
         collision.geometry = visual.geometry
 
         # Define Inertial Frame
@@ -344,26 +433,26 @@ class Converter:
         for i in range(0,len(matrix)):
             matrix[i] = convert(matrix[i], units)
 
-        inertial.matrix['ixx'] = matrix[0]
-        inertial.matrix['ixy'] = matrix[1]
-        inertial.matrix['ixz'] = matrix[2]
-        inertial.matrix['iyy'] = matrix[4]
-        inertial.matrix['iyz'] = matrix[5]
-        inertial.matrix['izz'] = matrix[8]
+        inertial.ixx = matrix[0]
+        inertial.ixy = matrix[1]
+        inertial.ixz = matrix[2]
+        inertial.iyy = matrix[4]
+        inertial.iyz = matrix[5]
+        inertial.izz = matrix[8]
 
         # Inertial origin is the center of gravity
         (off, rot) = self.tfman.get("X" + id, id+"CG")
         rpy = list(euler_from_quaternion(rot))
-        inertial.origin = Pose(zero(off), zero(rpy))
+        inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
 
         # Visual offset is difference between origin and CS1
         (off, rot) = self.tfman.get("X" + id, id+"CS1")
         rpy = list(euler_from_quaternion(rot))
-        visual.origin = Pose(zero(off), zero(rpy))
+        visual.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
         collision.origin = visual.origin
 
         # Define Material
-        visual.material = Material()
+        visual.material = urdf_parser_py.urdf.Material()
         # Use specified color, if exists. Otherwise, get random color
         if 'color' in linkdict:
             cname = "%s_color"%id
@@ -375,10 +464,10 @@ class Converter:
 
         # If color has already been output, only output name
         if not cname in self.usedcolors:
-            visual.material.color = Color(r,g,b,a)
+            visual.material.color = urdf_parser_py.urdf.Color(r,g,b,a)
             self.usedcolors[cname] = True
 
-        link = Link(id, visual, inertial, collision)
+        link = urdf_parser_py.urdf.Link(id, visual, inertial, collision)
         self.result.add_link(link)
 
     def getColor(self, s):
@@ -423,14 +512,18 @@ class Converter:
                 setattr(limits, k, v)
 
         if 'axis' in jointdict and jtype != 'fixed':
-            axis = jointdict['axis'].replace(',', ' ')
+            axis_string = jointdict['axis'].replace(',', ' ')
 
         # Define the origin
         (off, rot) = self.tfman.get("X" + pid, "X" + cid)
         rpy = list(euler_from_quaternion(rot))
-        origin = Pose(zero(off), zero(rpy))
+        origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
+        
+        #print("axis string " + str(axis_string))
+        axis = [float(axis_el) for axis_el in axis_string.split()]
+        #print("axis " + str(axis))
 
-        joint = Joint(id, pid, cid, jtype, limits=limits, axis=axis, origin=origin)
+        joint = urdf_parser_py.urdf.Joint(id, pid, cid, jtype, limit=limits, axis=axis, origin=origin)
         self.result.add_joint(joint)
 
     def getName(self, basename):
@@ -536,7 +629,7 @@ def quaternion_from_matrix(matrix):
     M = numpy.array(matrix, dtype=numpy.float64, copy=False)[:4, :4]
     t = numpy.trace(M)
     if t > M[3, 3]:
-        q[3] = t2
+        q[3] = t
         q[2] = M[1, 0] - M[0, 1]
         q[1] = M[0, 2] - M[2, 0]
         q[0] = M[2, 1] - M[1, 2]
@@ -619,7 +712,7 @@ def Invert4x4Matrix(matrix):
     R = matrix[:3,:3]
     p = matrix[:3,3]
     ret_mat[:3,:3] = R.transpose()
-    ret_mat[:3,3] = -(R.transpose())*p
+    ret_mat[:3,3] = -numpy.dot(R.transpose(),p)
     return ret_mat
 
 def quaternion_to_rpy(quat):
@@ -636,29 +729,71 @@ def zero(arr):
             arr[i] = 0
     return arr
 
-class CustomTransformManager
+def quaternion_matrix(quaternion):
+    """Return homogeneous rotation matrix from quaternion.
+
+    >>> M = quaternion_matrix([0.99810947, 0.06146124, 0, 0])
+    >>> numpy.allclose(M, rotation_matrix(0.123, [1, 0, 0]))
+    True
+    >>> M = quaternion_matrix([1, 0, 0, 0])
+    >>> numpy.allclose(M, numpy.identity(4))
+    True
+    >>> M = quaternion_matrix([0, 1, 0, 0])
+    >>> numpy.allclose(M, numpy.diag([1, -1, -1, 1]))
+    True
+
+    """
+    # epsilon for testing whether a number is close to zero
+    _EPS = numpy.finfo(float).eps * 4.0
+    q = numpy.array(quaternion, dtype=numpy.float64, copy=True)
+    n = numpy.dot(q, q)
+    if n < _EPS:
+        return numpy.identity(4)
+    q *= math.sqrt(2.0 / n)
+    q = numpy.outer(q, q)
+    return numpy.array([
+        [1.0-q[2, 2]-q[3, 3],     q[1, 2]-q[3, 0],     q[1, 3]+q[2, 0], 0.0],
+        [    q[1, 2]+q[3, 0], 1.0-q[1, 1]-q[3, 3],     q[2, 3]-q[1, 0], 0.0],
+        [    q[1, 3]-q[2, 0],     q[2, 3]+q[1, 0], 1.0-q[1, 1]-q[2, 2], 0.0],
+        [                0.0,                 0.0,                 0.0, 1.0]])
+
+
+def getMatrix(offset,quaternion):
+    """Convert a quaternion + offset to a 4x4 rototranslation matrix"""
+    return_matrix = quaternion_matrix(quaternion)
+    return_matrix[:3,3] = offset
+    return return_matrix
+
+class CustomTransformManager:
     def __init__(self):
         self.transform_map = {}
 
-    def add(self,offset,angle,parent,child):
+    def add(self,offset,quaternion,parent,child):
         """Store transform for all frames as a list of transform with respect to the world reference frame"""
         # if parent is the world, store the frame directly
+        #("Quaternion : " +str(quaternion))
         if( parent == WORLD ):
-            self.transform_map[child] = getMatrix(offset,angle)
-        else if( child == WORLD ):
-            self.transform_map[parent] = Invert4x4Matrix(getMatrix(offset,angle))
+            self.transform_map[child] = getMatrix(offset,quaternion)
+        elif( child == WORLD ):
+            self.transform_map[parent] = Invert4x4Matrix(getMatrix(offset,quaternion))
         else :
             #check if one between parent and child is already part of the manager
             print("Not implemented");
 
     def get(self,parent,child):
         """"""
-        return_matrix = Invert4x4Matrix(self.transform[parent])*self.transform[child];
+        if( parent == WORLD and child == WORLD ):
+            return_matrix = numpy.identity(4)
+        elif( parent == WORLD ):
+            return_matrix = self.transform_map[child]
+        elif( child == WORLD ):
+            return_matrix = Invert4x4Matrix(self.transform_map[parent])
+        else:
+            return_matrix = Invert4x4Matrix(self.transform_map[parent])*self.transform_map[child];
         off = return_matrix[:3,3]
         q = quaternion_from_matrix(return_matrix);
-        rpy = quaternion_to_rpy(rot)
 
-        return [list(off), list(rpy)]
+        return [list(off), list(q)]
 
 if __name__ == '__main__':
     argc = len(sys.argv)
@@ -671,7 +806,7 @@ if __name__ == '__main__':
         config = sys.argv[2]
         mode = sys.argv[3]
     else:
-        print "Usage: " + sys.argv[0] + " {XML filename} [configfile] {xml|graph|groups|none}"
+        print "Usage: " + sys.argv[0] + " {XML filename} [configfile] {xml|graph|none}"
         sys.exit(-1)
     con = Converter()
     con.convert(filename, config, mode)
