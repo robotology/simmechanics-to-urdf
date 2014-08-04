@@ -167,7 +167,7 @@ class Converter:
         self.root = configuration.get('root', None)
         self.extrajoints = configuration.get('extrajoints', {})
         self.filenameformat = configuration.get('filenameformat', "%s")
-        self.forcelowercase = configuration.get('forcelowercase', False)
+        self.forcelowercase = configuration.get('forcelowercase', True)
         self.scale = configuration.get('scale', None)
         self.freezeAll = configuration.get('freezeAll', False)
         self.baseframe = configuration.get('baseframe', WORLD)
@@ -433,12 +433,13 @@ class Converter:
         for i in range(0,len(matrix)):
             matrix[i] = convert(matrix[i], units)
 
-        inertial.ixx = matrix[0]
-        inertial.ixy = matrix[1]
-        inertial.ixz = matrix[2]
-        inertial.iyy = matrix[4]
-        inertial.iyz = matrix[5]
-        inertial.izz = matrix[8]
+        inertial.inertia = urdf_parser_py.urdf.Inertia()
+        inertial.inertia.ixx = matrix[0]
+        inertial.inertia.ixy = matrix[1]
+        inertial.inertia.ixz = matrix[2]
+        inertial.inertia.iyy = matrix[4]
+        inertial.inertia.iyz = matrix[5]
+        inertial.inertia.izz = matrix[8]
 
         # Inertial origin is the center of gravity
         (off, rot) = self.tfman.get("X" + id, id+"CG")
