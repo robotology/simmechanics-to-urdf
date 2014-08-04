@@ -42,30 +42,29 @@ _AXES2TUPLE = {
     'rzxz': (2, 0, 1, 1), 'rxyz': (2, 1, 0, 1), 'rzyz': (2, 1, 1, 1)}
 
 _TUPLE2AXES = dict((v, k) for k, v in _AXES2TUPLE.items())
-
 def euler_from_matrix(matrix, axes='sxyz'):
     """Return Euler angles from rotation matrix for specified axis sequence.
 
-    axes : One of 24 axis sequences as string or encoded tuple
+axes : One of 24 axis sequences as string or encoded tuple
 
-    Note that many Euler angle triplets can describe one matrix.
+Note that many Euler angle triplets can describe one matrix.
 
-    >>> R0 = euler_matrix(1, 2, 3, 'syxz')
-    >>> al, be, ga = euler_from_matrix(R0, 'syxz')
-    >>> R1 = euler_matrix(al, be, ga, 'syxz')
-    >>> numpy.allclose(R0, R1)
-    True
-    >>> angles = (4*math.pi) * (numpy.random.random(3) - 0.5)
-    >>> for axes in _AXES2TUPLE.keys():
-    ...    R0 = euler_matrix(axes=axes, *angles)
-    ...    R1 = euler_matrix(axes=axes, *euler_from_matrix(R0, axes))
-    ...    if not numpy.allclose(R0, R1): print(axes, "failed")
+>>> R0 = euler_matrix(1, 2, 3, 'syxz')
+>>> al, be, ga = euler_from_matrix(R0, 'syxz')
+>>> R1 = euler_matrix(al, be, ga, 'syxz')
+>>> numpy.allclose(R0, R1)
+True
+>>> angles = (4.0*math.pi) * (numpy.random.random(3) - 0.5)
+>>> for axes in _AXES2TUPLE.keys():
+... R0 = euler_matrix(axes=axes, *angles)
+... R1 = euler_matrix(axes=axes, *euler_from_matrix(R0, axes))
+... if not numpy.allclose(R0, R1): print axes, "failed"
 
-    """
+"""
     try:
         firstaxis, parity, repetition, frame = _AXES2TUPLE[axes.lower()]
     except (AttributeError, KeyError):
-        _TUPLE2AXES[axes]  # validation
+        _ = _TUPLE2AXES[axes]
         firstaxis, parity, repetition, frame = axes
 
     i = firstaxis
@@ -76,22 +75,22 @@ def euler_from_matrix(matrix, axes='sxyz'):
     if repetition:
         sy = math.sqrt(M[i, j]*M[i, j] + M[i, k]*M[i, k])
         if sy > _EPS:
-            ax = math.atan2( M[i, j],  M[i, k])
-            ay = math.atan2( sy,       M[i, i])
+            ax = math.atan2( M[i, j], M[i, k])
+            ay = math.atan2( sy, M[i, i])
             az = math.atan2( M[j, i], -M[k, i])
         else:
-            ax = math.atan2(-M[j, k],  M[j, j])
-            ay = math.atan2( sy,       M[i, i])
+            ax = math.atan2(-M[j, k], M[j, j])
+            ay = math.atan2( sy, M[i, i])
             az = 0.0
     else:
         cy = math.sqrt(M[i, i]*M[i, i] + M[j, i]*M[j, i])
         if cy > _EPS:
-            ax = math.atan2( M[k, j],  M[k, k])
-            ay = math.atan2(-M[k, i],  cy)
-            az = math.atan2( M[j, i],  M[i, i])
+            ax = math.atan2( M[k, j], M[k, k])
+            ay = math.atan2(-M[k, i], cy)
+            az = math.atan2( M[j, i], M[i, i])
         else:
-            ax = math.atan2(-M[j, k],  M[j, j])
-            ay = math.atan2(-M[k, i],  cy)
+            ax = math.atan2(-M[j, k], M[j, j])
+            ay = math.atan2(-M[k, i], cy)
             az = 0.0
 
     if parity:
@@ -104,12 +103,13 @@ def euler_from_matrix(matrix, axes='sxyz'):
 def euler_from_quaternion(quaternion, axes='sxyz'):
     """Return Euler angles from quaternion for specified axis sequence.
 
-    >>> angles = euler_from_quaternion([0.99810947, 0.06146124, 0, 0])
+    >>> angles = euler_from_quaternion([0.06146124, 0, 0, 0.99810947])
     >>> numpy.allclose(angles, [0.123, 0, 0])
     True
-
     """
     return euler_from_matrix(quaternion_matrix(quaternion), axes)
+
+
 
 class Converter:
     def __init__(self):
@@ -168,9 +168,14 @@ class Converter:
         self.extrajoints = configuration.get('extrajoints', {})
         self.filenameformat = configuration.get('filenameformat', "%s")
         self.forcelowercase = configuration.get('forcelowercase', True)
-        self.scale = configuration.get('scale', None)
+        scale_str = configuration.get('scale', None)
+        if( scale_str is not None ):
+            self.scale = [float(scale_el) for scale_el in scale_str.split()]
         self.freezeAll = configuration.get('freezeAll', False)
         self.baseframe = configuration.get('baseframe', WORLD)
+        self.damping = configuration.get('damping',0.1)
+        self.friction = configuration.get('friction',None)
+        self.rename = configuration.get('rename',{})
 
         # Get lists converted to strings
         self.removeList = [ str(e) for e in configuration.get('remove', []) ]
@@ -248,7 +253,6 @@ class Converter:
 
             orientation = getlist(fdict['orientation'])
             quat = matrixToQuaternion(orientation)
-
             # If the frame does not have a reference number,
             # use the name plus a suffix (for CG or CS1...
             # otherwise ignore the frame
@@ -308,6 +312,11 @@ class Converter:
                 joint['axis'] = jdict['axis']
             if 'limits' in jdict:
                 joint['limits'] = jdict['limits']
+
+        #if the joint is revolute but no limits are defined, switch to continuous
+        if 'limits' not in joint.keys()  and joint['type'] == "revolute":
+            joint['type'] = "continuous";
+
 
         self.joints[uid] = joint
 
@@ -508,7 +517,7 @@ class Converter:
         axis = None
 
         if 'limits' in jointdict:
-            limits = JointLimit(None, None)
+            limits = urdf_parser_py.urdf.JointLimit(None, None)
             for (k,v) in jointdict['limits'].items():
                 setattr(limits, k, v)
 
@@ -524,18 +533,25 @@ class Converter:
         axis = [float(axis_el) for axis_el in axis_string.split()]
         #print("axis " + str(axis))
 
-        joint = urdf_parser_py.urdf.Joint(id, pid, cid, jtype, limit=limits, axis=axis, origin=origin)
+        #adding damping and friction (not from simmechanics but from configuration file)
+        joint_dynamics = urdf_parser_py.urdf.JointDynamics(damping=self.damping,friction=self.friction)
+
+        joint = urdf_parser_py.urdf.Joint(id, pid, cid, jtype, limit=limits, axis=axis, origin=origin,dynamics=joint_dynamics)
         self.result.add_joint(joint)
 
     def getName(self, basename):
         """Return a unique name of the format
-           basenameD where D is the lowest number
-           to make the name unique"""
-        index = 1
-        name = basename + str(index)
+           basenameD* where D is the lowest number
+           to make the name unique (if the basename is already unique, no number will be added). 
+           If a rule for renaming basename is defined in the configuration file, the basename
+           will be changed."""
+        index = 0
+        if basename in self.rename:
+           basename = self.rename[basename]
+        name = basename
         while name in self.names:
-            index = index + 1
             name = basename + str(index)
+            index = index + 1
         self.names[name] = 1
         return name
 
@@ -619,13 +635,37 @@ class Converter:
 
             self.makeGroup(child, ngid)
 
+def quaternion_matrix(quaternion):
+    """Return homogeneous rotation matrix from quaternion.
+
+>>> R = quaternion_matrix([0.06146124, 0, 0, 0.99810947])
+>>> numpy.allclose(R, rotation_matrix(0.123, (1, 0, 0)))
+True
+
+"""
+    q = numpy.array(quaternion[:4], dtype=numpy.float64, copy=True)
+    nq = numpy.dot(q, q)
+    if nq < _EPS:
+        return numpy.identity(4)
+    q *= math.sqrt(2.0 / nq)
+    q = numpy.outer(q, q)
+    return numpy.array((
+        (1.0-q[1, 1]-q[2, 2], q[0, 1]-q[2, 3], q[0, 2]+q[1, 3], 0.0),
+        ( q[0, 1]+q[2, 3], 1.0-q[0, 0]-q[2, 2], q[1, 2]-q[0, 3], 0.0),
+        ( q[0, 2]-q[1, 3], q[1, 2]+q[0, 3], 1.0-q[0, 0]-q[1, 1], 0.0),
+        ( 0.0, 0.0, 0.0, 1.0)
+        ), dtype=numpy.float64)
+
+
 def quaternion_from_matrix(matrix):
     """Return quaternion from rotation matrix.
-       Imported from tf.transformations
-       > R = rotation_matrix(0.123, (1, 2, 3))
-       > q = quaternion_from_matrix(R)
-       > numpy.allclose(q, [0.0164262, 0.0328524, 0.0492786, 0.9981095])
-      True """
+
+>>> R = rotation_matrix(0.123, (1, 2, 3))
+>>> q = quaternion_from_matrix(R)
+>>> numpy.allclose(q, [0.0164262, 0.0328524, 0.0492786, 0.9981095])
+True
+
+"""
     q = numpy.empty((4, ), dtype=numpy.float64)
     M = numpy.array(matrix, dtype=numpy.float64, copy=False)[:4, :4]
     t = numpy.trace(M)
@@ -730,34 +770,6 @@ def zero(arr):
             arr[i] = 0
     return arr
 
-def quaternion_matrix(quaternion):
-    """Return homogeneous rotation matrix from quaternion.
-
-    >>> M = quaternion_matrix([0.99810947, 0.06146124, 0, 0])
-    >>> numpy.allclose(M, rotation_matrix(0.123, [1, 0, 0]))
-    True
-    >>> M = quaternion_matrix([1, 0, 0, 0])
-    >>> numpy.allclose(M, numpy.identity(4))
-    True
-    >>> M = quaternion_matrix([0, 1, 0, 0])
-    >>> numpy.allclose(M, numpy.diag([1, -1, -1, 1]))
-    True
-
-    """
-    # epsilon for testing whether a number is close to zero
-    _EPS = numpy.finfo(float).eps * 4.0
-    q = numpy.array(quaternion, dtype=numpy.float64, copy=True)
-    n = numpy.dot(q, q)
-    if n < _EPS:
-        return numpy.identity(4)
-    q *= math.sqrt(2.0 / n)
-    q = numpy.outer(q, q)
-    return numpy.array([
-        [1.0-q[2, 2]-q[3, 3],     q[1, 2]-q[3, 0],     q[1, 3]+q[2, 0], 0.0],
-        [    q[1, 2]+q[3, 0], 1.0-q[1, 1]-q[3, 3],     q[2, 3]-q[1, 0], 0.0],
-        [    q[1, 3]-q[2, 0],     q[2, 3]+q[1, 0], 1.0-q[1, 1]-q[2, 2], 0.0],
-        [                0.0,                 0.0,                 0.0, 1.0]])
-
 
 def getMatrix(offset,quaternion):
     """Convert a quaternion + offset to a 4x4 rototranslation matrix"""
@@ -772,17 +784,21 @@ class CustomTransformManager:
     def add(self,offset,quaternion,parent,child):
         """Store transform for all frames as a list of transform with respect to the world reference frame"""
         # if parent is the world, store the frame directly
+        #print("Storing transformation between " + parent + " and " + child)
         #("Quaternion : " +str(quaternion))
         if( parent == WORLD ):
             self.transform_map[child] = getMatrix(offset,quaternion)
+            #print(str(self.transform_map[child]))
         elif( child == WORLD ):
             self.transform_map[parent] = Invert4x4Matrix(getMatrix(offset,quaternion))
+            #print(str(self.transform_map[parent]))
         else :
             #check if one between parent and child is already part of the manager
             print("Not implemented");
 
     def get(self,parent,child):
         """"""
+        #print("Getting transformation between " + parent + " and " + child)
         if( parent == WORLD and child == WORLD ):
             return_matrix = numpy.identity(4)
         elif( parent == WORLD ):
@@ -790,7 +806,8 @@ class CustomTransformManager:
         elif( child == WORLD ):
             return_matrix = Invert4x4Matrix(self.transform_map[parent])
         else:
-            return_matrix = Invert4x4Matrix(self.transform_map[parent])*self.transform_map[child];
+            return_matrix = numpy.dot(Invert4x4Matrix(self.transform_map[parent]),self.transform_map[child]);
+        #print(str(return_matrix))
         off = return_matrix[:3,3]
         q = quaternion_from_matrix(return_matrix);
 
