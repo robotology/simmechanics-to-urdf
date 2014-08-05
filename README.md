@@ -1,4 +1,4 @@
-simmechanics_to_urdf
+simmechanics-to-urdf
 ====================
 
 Script for converting first-generation ( PhysicalModelingXMLFile ) SimMechanics XML files to URDF ( http://wiki.ros.org/urdf ) .
