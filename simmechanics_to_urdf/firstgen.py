@@ -813,7 +813,7 @@ class CustomTransformManager:
 
         return [list(off), list(q)]
 
-if __name__ == '__main__':
+def main():
     argc = len(sys.argv)
     if argc == 3:
         filename = sys.argv[1]
@@ -829,4 +829,8 @@ if __name__ == '__main__':
     con = Converter()
     con.convert(filename, config, mode)
 
+
+
+if __name__ == '__main__':
+	main()
 
