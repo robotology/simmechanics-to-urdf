@@ -144,9 +144,9 @@ class Converter:
         # output the output
         if mode == "xml":
             #print("URDF model to print : \n " + str(self.result) + "\n" )
-            print lxml.etree.tostring(self.result.to_xml(),pretty_print=True)
+            print(lxml.etree.tostring(self.result.to_xml(),pretty_print=True))
         if mode == "graph":
-            print self.graph()
+            print(self.graph())
         #if mode == "groups":
         #    print self.groups(root)
 
@@ -826,7 +826,7 @@ def main():
         config = sys.argv[2]
         mode = sys.argv[3]
     else:
-        print "Usage: " + sys.argv[0] + " {XML filename} [configfile] {xml|graph|none}"
+        print("Usage: " + sys.argv[0] + " {XML filename} [configfile] {xml|graph|none}")
         sys.exit(-1)
     con = Converter()
     con.convert(filename, config, mode)
