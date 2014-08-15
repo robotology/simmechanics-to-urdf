@@ -171,6 +171,8 @@ class Converter:
         scale_str = configuration.get('scale', None)
         if( scale_str is not None ):
             self.scale = [float(scale_el) for scale_el in scale_str.split()]
+        else:
+            self.scale = None
         self.freezeAll = configuration.get('freezeAll', False)
         self.baseframe = configuration.get('baseframe', WORLD)
         self.damping = configuration.get('damping',0.1)
