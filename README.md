@@ -20,16 +20,26 @@ Install the necessary dependencies with apt-get:
 ~~~
 sudo apt-get install python-lxml python-yaml python-numpy
 ~~~
+
 You can install `urdf_parser_py` from the urdfdom git repository:
 ~~~
 git clone https://github.com/ros/urdfdom
-cd urdfdom/urdf_parser_py
+cd 
 sudo python setup.py install
 ~~~
+
+##### Install simmechanics-to-urdf
+You can then install `simmechanics-to-urdf`:
+~~~
+git clone https://github.com/robotology-playground/simmechanics-to-urdf
+cd simmechanics-to-urdf
+sudo python setup.py install
+~~~
+
 ##### Use the script
 You can call the script:
 ~~~
-python convert.py {SimMechanics XML filename} [configfile] {xml|graph|none}
+simmechanics_to_urdf {SimMechanics XML filename} [configfile] {xml|graph|none}
 ~~~
 The third argument to the script is the output. Selecting graph the script will output a graphviz representation 
 of the SimMechanics model, useful for debugging, while selecting xml it will output the converted URDF.
