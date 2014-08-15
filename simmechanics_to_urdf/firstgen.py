@@ -157,7 +157,7 @@ class Converter:
         if configFile == None:
             configuration = {}
         else:
-            configuration = yaml.load(file(configFile, 'r'))
+            configuration = yaml.load(open(configFile, 'r'))
             if configuration == None:
                 configuration = {}
 
@@ -230,7 +230,7 @@ class Converter:
             colorelement = linkdict['MaterialProp'][1]
             color = colorelement.childNodes[0].data
             linkdict['MaterialProp'] = None
-            linkdict['color'] = map(float, color.split(",")) + [1.0]
+            linkdict['color'] = list(map(float, color.split(","))) + [1.0]
 
         self.links[uid] = linkdict
         self.parseFrames(frames, uid)
