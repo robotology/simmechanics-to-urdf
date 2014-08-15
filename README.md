@@ -1,5 +1,6 @@
 simmechanics-to-urdf
 ====================
+[![Build Status](https://travis-ci.org/robotology-playground/simmechanics-to-urdf.svg?branch=master)](https://travis-ci.org/robotology-playground/simmechanics-to-urdf)
 
 Script for converting first-generation ( PhysicalModelingXMLFile ) SimMechanics XML files to URDF ( http://wiki.ros.org/urdf ) .
 
