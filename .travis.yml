@@ -9,8 +9,8 @@ before_install:
 - pip install numpy lxml PyYAML --use-mirrors
 # install urdf_parser_py
 - git clone https://github.com/traversaro/urdfdom
-- git checkout patch-1
 - cd urdfdom/urdf_parser_py
+- git checkout patch-1
 - python setup.py install
 - cd ../../
 
