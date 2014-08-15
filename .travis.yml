@@ -17,5 +17,6 @@ install:
 - python setup.py install
 
 script:
+- cd test
 - simmechanics_to_urdf
 - simmechanics_to_urdf LEGS_MECHANISM.xml legs_simmechanics_options.yaml
