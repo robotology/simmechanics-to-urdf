@@ -18,5 +18,5 @@ install:
 
 script:
 - cd test
-- simmechanics_to_urdf LEGS_MECHANISM.xml legs_simmechanics_options.yaml xml
-- simmechanics_to_urdf LEGS_MECHANISM.xml legs_simmechanics_options.yaml graph
+- simmechanics_to_urdf LEGS_MECHANISM.xml --yaml legs_simmechanics_options.yaml --csv-joints joints_parameters.csv --output xml
+- simmechanics_to_urdf LEGS_MECHANISM.xml --yaml legs_simmechanics_options.yaml --csv-joints joints_parameters.csv --output graph

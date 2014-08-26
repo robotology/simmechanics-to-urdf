@@ -1,6 +1,5 @@
 scale: "0.001 0.001 0.001"
 forcelowercase: Yes
-damping: 0.1
 filenameformat: "model://legs_simmechanics/meshes/%s"
 rename: 
     ICUB3_WAIST_PITCH--ICUB3_HIP_FLEX-EXT_LEFT: l_hip_pitch

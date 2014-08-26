@@ -8,6 +8,8 @@ import math
 import numpy    #for creating matrix to convert to quaternion
 import yaml
 import urdf_parser_py.urdf
+import argparse
+import csv
 
 # Conversion Factors
 INCH2METER = 0.0254
@@ -128,11 +130,15 @@ class Converter:
         # Extra Transforms for Debugging
         self.tfman.add([0,0,0], [0.70682518,0,0,0.70682518], "ROOT", WORLD) # rotate so Z axis is up
 
-    def convert(self, filename, configfile, mode):
+    def convert(self, filename, yaml_configfile, csv_configfile, mode):
         self.mode = mode
 
-        # Parse the configuration file
-        self.parseConfig(configfile)
+        # Parse the global YAML configuration file
+        print("Loading YAML configfile: "+yaml_configfile)
+        self.parseYAMLConfig(yaml_configfile)
+
+        # Parse the joint CSV configuratio nfile
+        self.parseJointCSVConfig(csv_configfile)
 
         # Parse the input file
         self.parse(xml.dom.minidom.parse(filename))
@@ -150,8 +156,8 @@ class Converter:
         #if mode == "groups":
         #    print self.groups(root)
 
-    def parseConfig(self, configFile):
-        """Parse the Configuration File, if it exists.
+    def parseYAMLConfig(self, configFile):
+        """Parse the YAML configuration File, if it exists.
            Set the fields the default if the config does
            not set them """
         if configFile == None:
@@ -175,8 +181,12 @@ class Converter:
             self.scale = None
         self.freezeAll = configuration.get('freezeAll', False)
         self.baseframe = configuration.get('baseframe', WORLD)
-        self.damping = configuration.get('damping',0.1)
-        self.friction = configuration.get('friction',None)
+        self.damping_fallback = configuration.get('damping',0.1)
+        self.friction_fallback = configuration.get('friction',None)
+
+        self.effort_limit_fallback = configuration.get('effort_limit',50000)
+        self.velocity_limit_fallback = configuration.get('velocity_limit',50000)
+                     
         self.rename = configuration.get('rename',{})
 
         # Get lists converted to strings
@@ -192,6 +202,20 @@ class Converter:
         for frame in configuration.get('moreframes', []):
             self.tfman.add(frame['offset'], frame['orientation'], frame['parent'], frame['child'])
 
+    def parseJointCSVConfig(self, configFile):
+        """Parse the CSV configuration File, if it exists."""
+        self.joint_configuration = {}
+        if configFile is not None:
+            with open(configFile, 'rb') as csvfile:
+                my_dialect = csv.Sniffer().sniff(csvfile.read(1024))
+                csvfile.seek(0)
+                print(csvfile.read())
+                csvfile.seek(0)
+                reader = csv.DictReader(csvfile, dialect=my_dialect)
+                for row in reader:
+                    print(row)
+                    self.joint_configuration[row["joint_name"]] = row
+                    
 
     def parse(self, element):
         """Recursively goes through all XML elements
@@ -314,6 +338,9 @@ class Converter:
                 joint['axis'] = jdict['axis']
             if 'limits' in jdict:
                 joint['limits'] = jdict['limits']
+
+        # If some limits are defined in the CSV joint configuration file load them
+       
 
         #if the joint is revolute but no limits are defined, switch to continuous
         if 'limits' not in joint.keys()  and joint['type'] == "revolute":
@@ -522,6 +549,28 @@ class Converter:
             limits = urdf_parser_py.urdf.JointLimit(None, None)
             for (k,v) in jointdict['limits'].items():
                 setattr(limits, k, v)
+        else:
+           #if present, load limits from csv joint configuration file
+           if( id in self.joint_configuration ):
+               conf = self.joint_configuration[id]
+               if( ("upper_limit" in conf) or
+                   ("lower_limit" in conf) or
+                   ("velocity_limit" in conf) or
+                   ("effort_limit" in conf) ):
+                   limits = urdf_parser_py.urdf.JointLimit()
+                   if "upper_limit" in conf:
+                       limits.upper = float(conf.get("upper_limit"))
+                   if "lower_limit" in conf:
+                       limits.lower = float(conf.get("lower_limit"))
+                   if "velocity_limit" in conf:
+                       limits.velocity = float(conf.get("velocity_limit"))  
+                   else:
+                       limits.velocity = self.velocity_limit_fallback                  
+                   if "effort_limit" in conf:
+                       limits.effort = float(conf.get("effort_limit"))
+                   else:
+                       limits.effort = self.effort_limit_fallback
+                    
 
         if 'axis' in jointdict and jtype != 'fixed':
             axis_string = jointdict['axis'].replace(',', ' ')
@@ -536,7 +585,15 @@ class Converter:
         #print("axis " + str(axis))
 
         #adding damping and friction (not from simmechanics but from configuration file)
-        joint_dynamics = urdf_parser_py.urdf.JointDynamics(damping=self.damping,friction=self.friction)
+        joint_damping = self.damping_fallback;
+        joint_friction = self.friction_fallback;
+        if( id in self.joint_configuration ):
+            conf = self.joint_configuration[id]
+            if "damping" in conf:
+                joint_damping = float(conf["damping"])
+            if "friction" in conf:
+                joint_friction = float(conf["friction"])
+        joint_dynamics = urdf_parser_py.urdf.JointDynamics(damping=joint_damping,friction=joint_friction)
 
         joint = urdf_parser_py.urdf.Joint(id, pid, cid, jtype, limit=limits, axis=axis, origin=origin,dynamics=joint_dynamics)
         self.result.add_joint(joint)
@@ -816,20 +873,29 @@ class CustomTransformManager:
         return [list(off), list(q)]
 
 def main():
+    parser = argparse.ArgumentParser(description='Convert (first generation) SimMechanics XML files to URDF')
+    parser.add_argument('filename', nargs='?', help='input SimMechanics (first generation) xml file')
+    parser.add_argument('--csv-joints', dest='csv_joints_config', nargs='?', action='store', help='CSV joints configuration file (for options of single joints)')
+    parser.add_argument('--yaml', dest='yaml_config', nargs='?', action='store', help='YAML configuration file (for global options)')    
+    parser.add_argument('--output', dest='mode', nargs='?', action='store', help='output mode, possible options are xml (URDF output), graph (DOT output) or none')
+
+    '''
     argc = len(sys.argv)
     if argc == 3:
         filename = sys.argv[1]
-        config = None
+        yaml_config = None
         mode = sys.argv[2]
     elif argc == 4:
         filename = sys.argv[1]
-        config = sys.argv[2]
+        yaml_config = sys.argv[2]
         mode = sys.argv[3]
     else:
-        print("Usage: " + sys.argv[0] + " {XML filename} [configfile] {xml|graph|none}")
-        sys.exit(-1)
+        print("Usage: " + sys.argv[0] + "{XML filename} --yaml [yaml_configfile] --csv-joints [csv_joints_configfile] --output {xml|graph|none}")
+    '''
+    args = parser.parse_args()
+
     con = Converter()
-    con.convert(filename, config, mode)
+    con.convert(args.filename, args.yaml_config, args.csv_joints_config, args.mode)
 
 
 

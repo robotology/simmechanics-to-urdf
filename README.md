@@ -39,7 +39,7 @@ sudo python setup.py install
 ##### Use the script
 You can call the script:
 ~~~
-simmechanics_to_urdf {SimMechanics XML filename} [configfile] {xml|graph|none}
+simmechanics_to_urdf {SimMechanics XML filename} --yaml [yaml_configfile] --csv-joint csv_joints_configfile --output {xml|graph|none}
 ~~~
-The third argument to the script is the output. Selecting graph the script will output a graphviz representation 
+The `--output` options defines the output. Selecting graph the script will output a graphviz representation 
 of the SimMechanics model, useful for debugging, while selecting xml it will output the converted URDF.
