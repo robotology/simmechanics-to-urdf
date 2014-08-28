@@ -206,7 +206,7 @@ class Converter:
         """Parse the CSV configuration File, if it exists."""
         self.joint_configuration = {}
         if configFile is not None:
-            with open(configFile, 'rb') as csvfile:
+            with open(configFile, 'r') as csvfile:
                 my_dialect = csv.Sniffer().sniff(csvfile.read(1024))
                 csvfile.seek(0)
                 print(csvfile.read())
