@@ -134,7 +134,6 @@ class Converter:
         self.mode = mode
 
         # Parse the global YAML configuration file
-        print("Loading YAML configfile: "+yaml_configfile)
         self.parseYAMLConfig(yaml_configfile)
 
         # Parse the joint CSV configuratio nfile
@@ -209,11 +208,9 @@ class Converter:
             with open(configFile, 'r') as csvfile:
                 my_dialect = csv.Sniffer().sniff(csvfile.read(1024))
                 csvfile.seek(0)
-                print(csvfile.read())
-                csvfile.seek(0)
                 reader = csv.DictReader(csvfile, dialect=my_dialect)
                 for row in reader:
-                    print(row)
+                    #print(row)
                     self.joint_configuration[row["joint_name"]] = row
                     
 
@@ -334,7 +331,7 @@ class Converter:
             joint['type'] = jdict.get('type', 'continuous')
 
             if 'axis' in jdict:
-                print("axis" + str(jdict['axis']))
+                #print("axis" + str(jdict['axis']))
                 joint['axis'] = jdict['axis']
             if 'limits' in jdict:
                 joint['limits'] = jdict['limits']
@@ -853,7 +850,7 @@ class CustomTransformManager:
             #print(str(self.transform_map[parent]))
         else :
             #check if one between parent and child is already part of the manager
-            print("Not implemented");
+            print("simmechanics_to_urdf: Tag not implemented, please file an issue at https://github.com/robotology-playground/simmechanics-to-urdf/issues/new .");
 
     def get(self,parent,child):
         """"""
