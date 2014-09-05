@@ -568,7 +568,7 @@ class Converter:
                    else:
                        limits.effort = self.effort_limit_fallback
                     
-        print(jointdict)
+        #print(jointdict)
         if 'axis' in jointdict and jtype != 'fixed':
             axis_string = jointdict['axis'].replace(',', ' ')
 
@@ -627,7 +627,8 @@ class Converter:
             joint = self.joints[jkey]
             pref = joint['parent']
             cref = joint['child']
-            label = pref + ":" + cref
+            #label = pref + ":" + cref
+            label = joint['name']
             pkey = self.getLinkNameByFrame(pref)
             ckey = self.getLinkNameByFrame(cref)
             case = 'std'
