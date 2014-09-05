@@ -568,19 +568,21 @@ class Converter:
                    else:
                        limits.effort = self.effort_limit_fallback
                     
-
+        print(jointdict)
         if 'axis' in jointdict and jtype != 'fixed':
             axis_string = jointdict['axis'].replace(',', ' ')
+
+            #print("axis string " + str(axis_string))
+            axis = [float(axis_el) for axis_el in axis_string.split()]
+            #print("axis " + str(axis))
+
 
         # Define the origin
         (off, rot) = self.tfman.get("X" + pid, "X" + cid)
         rpy = list(euler_from_quaternion(rot))
         origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
         
-        #print("axis string " + str(axis_string))
-        axis = [float(axis_el) for axis_el in axis_string.split()]
-        #print("axis " + str(axis))
-
+       
         #adding damping and friction (not from simmechanics but from configuration file)
         joint_damping = self.damping_fallback;
         joint_friction = self.friction_fallback;
@@ -874,7 +876,7 @@ def main():
     parser.add_argument('filename', nargs='?', help='input SimMechanics (first generation) xml file')
     parser.add_argument('--csv-joints', dest='csv_joints_config', nargs='?', action='store', help='CSV joints configuration file (for options of single joints)')
     parser.add_argument('--yaml', dest='yaml_config', nargs='?', action='store', help='YAML configuration file (for global options)')    
-    parser.add_argument('--output', dest='mode', nargs='?', action='store', help='output mode, possible options are xml (URDF output), graph (DOT output) or none')
+    parser.add_argument('--output', dest='mode', nargs='?', action='store', default='xml', help='output mode, possible options are xml (URDF output, default), graph (DOT output) or none')
 
     '''
     argc = len(sys.argv)
