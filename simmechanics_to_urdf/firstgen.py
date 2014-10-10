@@ -189,7 +189,7 @@ class Converter:
         self.rename = configuration.get('rename',{})
 
         # Get lists converted to strings
-        self.removeList = [ str(e) for e in configuration.get('remove', []) ]
+        self.removeList = configuration.get('remove', {})
         self.freezeList = [ str(e) for e in configuration.get('freeze', []) ]
 
         # Get map with key converted to strings
@@ -212,7 +212,7 @@ class Converter:
                 for row in reader:
                     #print(row)
                     self.joint_configuration[row["joint_name"]] = row
-                    
+        
 
     def parse(self, element):
         """Recursively goes through all XML elements
@@ -314,7 +314,11 @@ class Converter:
             joint['type'] = 'fixed'
 
         # Ignore joints on the remove list
-        if joint['parent'] in self.removeList:
+        #print("Parsing joint " + joint['name'])
+        #print("Removelist: ")
+        #print(self.removeList)
+        if (joint['parent'] in self.removeList) or (joint['name'] in self.removeList):
+            #print(joint['name']+" is in removelist")
             return
 
         # Force joints to be fixed on the freezeList
@@ -478,7 +482,11 @@ class Converter:
 
         # Inertial origin is the center of gravity
         (off, rot) = self.tfman.get("X" + id, id+"CG")
+        #print("X"+id+" to "+id+"CG:")
+        #print(off)
+        #print(rot)
         rpy = list(euler_from_quaternion(rot))
+
         inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
 
         # Visual offset is difference between origin and CS1
@@ -548,6 +556,8 @@ class Converter:
                 setattr(limits, k, v)
         else:
            #if present, load limits from csv joint configuration file
+           #note: angle in csv joints configuration file angles are represented as DEGREES
+           #print(self.joint_configuration)
            if( id in self.joint_configuration ):
                conf = self.joint_configuration[id]
                if( ("upper_limit" in conf) or
@@ -556,9 +566,9 @@ class Converter:
                    ("effort_limit" in conf) ):
                    limits = urdf_parser_py.urdf.JointLimit()
                    if "upper_limit" in conf:
-                       limits.upper = float(conf.get("upper_limit"))
+                       limits.upper = math.radians(float(conf.get("upper_limit")))
                    if "lower_limit" in conf:
-                       limits.lower = float(conf.get("lower_limit"))
+                       limits.lower = math.radians(float(conf.get("lower_limit")))
                    if "velocity_limit" in conf:
                        limits.velocity = float(conf.get("velocity_limit"))  
                    else:
@@ -567,6 +577,7 @@ class Converter:
                        limits.effort = float(conf.get("effort_limit"))
                    else:
                        limits.effort = self.effort_limit_fallback
+                   #print(limits)
                     
         #print(jointdict)
         if 'axis' in jointdict and jtype != 'fixed':
@@ -854,6 +865,7 @@ class CustomTransformManager:
         else :
             #check if one between parent and child is already part of the manager
             print("simmechanics_to_urdf: Tag not implemented, please file an issue at https://github.com/robotology-playground/simmechanics-to-urdf/issues/new .");
+            assert(False);
 
     def get(self,parent,child):
         """"""
