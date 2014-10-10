@@ -491,17 +491,20 @@ class Converter:
             if not 'parent' in link:
                 continue
             parentid = link['parent']
+            jointIsNotFixed = True
             if parentid == "GROUND":
                 ref = self.baseframe
             else:
                 joint = self.joints[link['jointmap'][parentid]]
                 ref = joint['parent']
+                if( joint['type'] == 'fixed' ):
+                    jointIsNotFixed = False
             # The root of each link is the offset to the joint
             # and the rotation of the CS1 frame
             # but if the joint is fixed, we can preserve the original
             # frame (this is necessary for correctly exporting 
             #        USERADDED frames)
-            if( joint['type'] != "fixed" or parentid == "GROUND" ):
+            if( jointIsNotFixed or parentid == "GROUND" ):
             	(off1, rot1) = self.tfman.get(WORLD, ref)
             	(off2, rot2) = self.tfman.get(WORLD, id + "CS1")
             	self.tfman.add(off1, rot2, WORLD, "X" + id)
