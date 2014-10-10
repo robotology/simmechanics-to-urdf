@@ -123,6 +123,8 @@ class Converter:
         self.colormap = {}
         self.colorindex = 0
         self.usedcolors = {}
+        self.ref2nameMap = {}
+        self.realRootLink = None
 
         #Start the Custom Transform Manager
         self.tfman = CustomTransformManager()
@@ -171,6 +173,7 @@ class Converter:
 
         self.root = configuration.get('root', None)
         self.extrajoints = configuration.get('extrajoints', {})
+        self.extraframes = []
         self.filenameformat = configuration.get('filenameformat', "%s")
         self.forcelowercase = configuration.get('forcelowercase', True)
         scale_str = configuration.get('scale', None)
@@ -210,7 +213,6 @@ class Converter:
                 csvfile.seek(0)
                 reader = csv.DictReader(csvfile, dialect=my_dialect)
                 for row in reader:
-                    #print(row)
                     self.joint_configuration[row["joint_name"]] = row
         
 
@@ -260,14 +262,26 @@ class Converter:
         if self.root == None and "geometryFileName" in linkdict:
             self.root = uid
 
-    def parseFrames(self, frames, parent):
+    def parseFrames(self, frames, parent_link):
         """Parse the frames from xml"""
         for frame in frames:
             if frame.nodeType is frame.TEXT_NODE:
                 continue
             fdict = getDictionary(frame)
-            fid = str(frame.getAttribute("ref"))
-            fdict['parent'] = parent
+            # We don't identify frames with ref attribute because USERADDED
+            # frames don't have ref attributes. We always use instead the
+            # urdf_link + name scheme (note that for added frames simmechanics link
+            # is different from urdf_link
+            fid = parent_link +  fdict['name']
+
+            # for using the ref numbers of the frame we build a map from the ref numbers 
+            # to the names
+            # fid = str(frame.getAttribute("ref"))
+            ref = str(frame.getAttribute("ref"))
+            
+            self.ref2nameMap[ref] =  fid;
+
+            fdict['parent'] = parent_link
 
             offset = getlist(fdict['position'])
             units = fdict['positionUnits']
@@ -278,15 +292,27 @@ class Converter:
             quat = matrixToQuaternion(orientation)
             # If the frame does not have a reference number,
             # use the name plus a suffix (for CG or CS1...
+            # If the frame does not have a reference number,
+            # but it is a USERADDED frame (frame added on the CAD
+            # for export in simmechanics) export the frame using the
+            # displayName tag
             # otherwise ignore the frame
-            if fid == "":
-                name = fdict['name']
-                if name == "CG":
-                    fid = parent + "CG"
-                elif name == "CS1":
-                    fid = parent + "CS1"
-                else:
-                    continue
+            if fdict['nodeID'].endswith('(USERADDED)'):
+               useradded_frame_name = self.getName(fdict['displayName'])
+               fid = useradded_frame_name + "CS1"
+               extraframe = {'parentlink':parent_link,'framename':useradded_frame_name}
+               self.extraframes = self.extraframes + [extraframe]
+               #add link to self.links structure
+               linkdict = {}
+               linkdict['name'] = useradded_frame_name
+               fdict['parent'] = useradded_frame_name
+               linkdict['neighbors'] = []
+               linkdict['children'] = []
+               linkdict['jointmap'] = {}
+               linkdict['frames'] = None
+               self.links[useradded_frame_name] = linkdict
+		  
+                       
 
             self.tfman.add(offset, quat, WORLD, fid)
             self.frames[fid] = fdict
@@ -299,8 +325,11 @@ class Converter:
         uid = self.getName(joint['name'])
 
         frames = element.getElementsByTagName("Frame")
-        joint['parent'] = str(frames[0].getAttribute("ref"))
-        joint['child'] = str(frames[1].getAttribute("ref"))
+        ref_parent = str(frames[0].getAttribute("ref"))
+        ref_child  = str(frames[1].getAttribute("ref"))
+
+        joint['ref_parent'] = ref_parent
+        joint['ref_child'] = ref_child
         type = element.getElementsByTagName("Primitive")
 
         # If there multiple elements, assume a fixed joint
@@ -317,17 +346,17 @@ class Converter:
         #print("Parsing joint " + joint['name'])
         #print("Removelist: ")
         #print(self.removeList)
-        if (joint['parent'] in self.removeList) or (joint['name'] in self.removeList):
+        if (uid in self.removeList) or (joint['name'] in self.removeList):
             #print(joint['name']+" is in removelist")
             return
 
         # Force joints to be fixed on the freezeList
-        if joint['parent'] in self.freezeList or self.freezeAll:
+        if (uid in self.freezeList) or (joint['name'] in self.freezeList) or self.freezeAll:
             joint['type'] = 'fixed'
 
         # Redefine specified joints on redefined list
-        if joint['parent'] in self.redefinedjoints.keys():
-            jdict = self.redefinedjoints[joint['parent']]
+        if joint['ref_parent'] in self.redefinedjoints.keys():
+            jdict = self.redefinedjoints[joint['ref_parent']]
             if 'name' in jdict:
                 uid = jdict['name']
 
@@ -355,6 +384,54 @@ class Converter:
            by breadth first search. Then construct new coordinate frames
            from new tree structure"""
 
+        #resolve the undefined reference for all the joints 
+        for jid in self.joints:
+            jointdict = self.joints[jid]
+            if( 'parent' not in jointdict.keys() ):
+                jointdict['parent'] = self.ref2nameMap[jointdict['ref_parent']]
+            if( 'child' not in jointdict.keys() ):
+                jointdict['child'] = self.ref2nameMap[jointdict['ref_child']]
+
+            # Find the real rootLink 
+            if( jointdict['parent'].startswith('RootPart') and jointdict['type'] == 'fixed' ):
+                if( self.realRootLink is not None ):
+                    pass
+                    #print("[WARN] multiple links attached to the RootPart, please open an issue with your model")
+                    #print("       at https://github.com/robotology-playground/simmechanics-to-urdf/issues/new")
+                else:
+                    self.realRootLink = self.getLinkNameByFrame(jointdict['child'])
+        
+        # Some postprocessing that was not possible to do while parsing
+        for extraframe in self.extraframes:
+            pid = extraframe['parentlink']
+            # Some USERADDED frames could be attached to the dummy root RootPart 
+            # In this case substitute the dummy root with the real first link 
+            # attached to the RootPart with a fixed link
+            if pid == 'RootPart':
+
+                extraframe['parentlink'] = self.realRootLink
+                # notice that we can disregard the original parent frame 
+                # of the joint because it is a fixed joint
+
+        # Add necessary information for any frame in the SimMechanics XML
+        # file that we want to save to URDF. Given that URDF does not 
+        # have a frame concept at all, we are bound to create "dummy" 
+        # links and joints to express the notion of frames 
+        for extraframe in self.extraframes:
+            pid = extraframe['parentlink']
+            cid = extraframe['framename']
+
+            joint_name = cid + "_fixed_joint"; 
+
+            self.links[pid]['neighbors'].append(cid)
+            self.links[pid]['jointmap'][cid] = joint_name
+            self.links[cid]['neighbors'].append(pid)
+            self.links[cid]['jointmap'][pid] = joint_name
+            self.joints[joint_name] = {'name': joint_name, 'parent': pid + 'CS1', 'child': cid + 'CS1', 'type': 'fixed'}
+            #for (k,v) in extraframe['attributes'].items():
+            #    self.links[cid][k] = v
+
+
         # Create a list of all neighboring links at each link
         for jid in self.joints:
             jointdict = self.joints[jid]
@@ -363,12 +440,17 @@ class Converter:
             pid = self.getLinkNameByFrame(jointdict['parent'])
             cid = self.getLinkNameByFrame(jointdict['child'])
             parent = self.links[pid]
-            child = self.links[cid]
-
+            child = self.links[cid] 
+            
             parent['neighbors'].append(cid)
             parent['jointmap'][cid] = jid
             child['neighbors'].append(pid)
             child['jointmap'][pid] = jid
+
+        #import pprint
+        #pp = pprint.PrettyPrinter(indent=4)
+        #pp.pprint(self.joints)
+
 
         # Add necessary information for any user-defined joints
         for (name, extrajoint) in self.extrajoints.items():
@@ -416,9 +498,16 @@ class Converter:
                 ref = joint['parent']
             # The root of each link is the offset to the joint
             # and the rotation of the CS1 frame
-            (off1, rot1) = self.tfman.get(WORLD, ref)
-            (off2, rot2) = self.tfman.get(WORLD, id + "CS1")
-            self.tfman.add(off1, rot2, WORLD, "X" + id)
+            # but if the joint is fixed, we can preserve the original
+            # frame (this is necessary for correctly exporting 
+            #        USERADDED frames)
+            if( joint['type'] != "fixed" or parentid == "GROUND" ):
+            	(off1, rot1) = self.tfman.get(WORLD, ref)
+            	(off2, rot2) = self.tfman.get(WORLD, id + "CS1")
+            	self.tfman.add(off1, rot2, WORLD, "X" + id)
+            else:
+                (off, rot) = self.tfman.get(WORLD, id + "CS1")
+                self.tfman.add(off, rot, WORLD, "X" + id)
 
 
     def output(self, rootid):
@@ -447,72 +536,81 @@ class Converter:
         if linkdict['name'] == "RootPart":
             return
 
-        visual = urdf_parser_py.urdf.Visual()
-        inertial = urdf_parser_py.urdf.Inertial()
-        collision = urdf_parser_py.urdf.Collision()
+        if( 'geometryFileName' in linkdict.keys() and 'mass' in linkdict.keys() ) :
+            ### Define Geometry (if this is not a fake link, i.e. a frame)
+            visual = urdf_parser_py.urdf.Visual()
+            collision = urdf_parser_py.urdf.Collision()
 
-        # Define Geometry
-        filename = linkdict['geometryFileName']
-        if self.forcelowercase:
-            filename = filename.lower()
-        filename = self.filenameformat % filename
+            filename = linkdict['geometryFileName']
+            if self.forcelowercase:
+                filename = filename.lower()
+            filename = self.filenameformat % filename
 
-        visual.geometry = urdf_parser_py.urdf.Mesh(filename, self.scale)
-        collision.geometry = visual.geometry
+            visual.geometry = urdf_parser_py.urdf.Mesh(filename, self.scale)
+            collision.geometry = visual.geometry
 
-        # Define Inertial Frame
-        units = linkdict['massUnits']
-        massval = convert(float(linkdict['mass']), units)
-        inertial.mass = massval
+            # Visual offset is difference between origin and CS1
+            (off, rot) = self.tfman.get("X" + id, id+"CS1")
+            rpy = list(euler_from_quaternion(rot))
+            visual.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
+            collision.origin = visual.origin
 
-        matrix = getlist(linkdict["inertia"])
+            # Define Material
+            visual.material = urdf_parser_py.urdf.Material()
+            # Use specified color, if exists. Otherwise, get random color
+            if 'color' in linkdict:
+                cname = "%s_color"%id
+                (r,g,b,a) = linkdict['color']
+            else:
+                (cname, (r,g,b,a)) = self.getColor(linkdict['name'])
 
-        units = linkdict['inertiaUnits']
+            visual.material.name = cname
 
-        for i in range(0,len(matrix)):
-            matrix[i] = convert(matrix[i], units)
+            # If color has already been output, only output name
+            if not cname in self.usedcolors:
+                visual.material.color = urdf_parser_py.urdf.Color(r,g,b,a)
+                self.usedcolors[cname] = True
 
-        inertial.inertia = urdf_parser_py.urdf.Inertia()
-        inertial.inertia.ixx = matrix[0]
-        inertial.inertia.ixy = matrix[1]
-        inertial.inertia.ixz = matrix[2]
-        inertial.inertia.iyy = matrix[4]
-        inertial.inertia.iyz = matrix[5]
-        inertial.inertia.izz = matrix[8]
 
-        # Inertial origin is the center of gravity
-        (off, rot) = self.tfman.get("X" + id, id+"CG")
-        #print("X"+id+" to "+id+"CG:")
-        #print(off)
-        #print(rot)
-        rpy = list(euler_from_quaternion(rot))
+            ### Define Inertial Frame (if this is not a fake link, i.e. a frame)
+            inertial = urdf_parser_py.urdf.Inertial()
+            units = linkdict['massUnits']
+            massval = convert(float(linkdict['mass']), units)
+            inertial.mass = massval
 
-        inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
+            matrix = getlist(linkdict["inertia"])
 
-        # Visual offset is difference between origin and CS1
-        (off, rot) = self.tfman.get("X" + id, id+"CS1")
-        rpy = list(euler_from_quaternion(rot))
-        visual.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
-        collision.origin = visual.origin
+            units = linkdict['inertiaUnits']
 
-        # Define Material
-        visual.material = urdf_parser_py.urdf.Material()
-        # Use specified color, if exists. Otherwise, get random color
-        if 'color' in linkdict:
-            cname = "%s_color"%id
-            (r,g,b,a) = linkdict['color']
+            for i in range(0,len(matrix)):
+                matrix[i] = convert(matrix[i], units)
+
+            inertial.inertia = urdf_parser_py.urdf.Inertia()
+            inertial.inertia.ixx = matrix[0]
+            inertial.inertia.ixy = matrix[1]
+            inertial.inertia.ixz = matrix[2]
+            inertial.inertia.iyy = matrix[4]
+            inertial.inertia.iyz = matrix[5]
+            inertial.inertia.izz = matrix[8]
+
+            # Inertial origin is the center of gravity
+            (off, rot) = self.tfman.get("X" + id, id+"CG")
+            #print("X"+id+" to "+id+"CG:")
+            #print(off)
+            #print(rot)
+            rpy = list(euler_from_quaternion(rot))
+
+            inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
+
+            ### add the link
+            link = urdf_parser_py.urdf.Link(id, visual, inertial, collision)
         else:
-            (cname, (r,g,b,a)) = self.getColor(linkdict['name'])
+            link = urdf_parser_py.urdf.Link(id)
 
-        visual.material.name = cname
 
-        # If color has already been output, only output name
-        if not cname in self.usedcolors:
-            visual.material.color = urdf_parser_py.urdf.Color(r,g,b,a)
-            self.usedcolors[cname] = True
-
-        link = urdf_parser_py.urdf.Link(id, visual, inertial, collision)
         self.result.add_link(link)
+
+
 
     def getColor(self, s):
         """ Gets a two element list containing a color name,
@@ -533,8 +631,6 @@ class Converter:
         if "Root" in jointdict['name']:
             return
 
-
-        # Define the parent and child
         pid = self.getLinkNameByFrame(jointdict['parent'])
         cid = self.getLinkNameByFrame(jointdict['child'])
 
@@ -557,7 +653,6 @@ class Converter:
         else:
            #if present, load limits from csv joint configuration file
            #note: angle in csv joints configuration file angles are represented as DEGREES
-           #print(self.joint_configuration)
            if( id in self.joint_configuration ):
                conf = self.joint_configuration[id]
                if( ("upper_limit" in conf) or
@@ -577,9 +672,8 @@ class Converter:
                        limits.effort = float(conf.get("effort_limit"))
                    else:
                        limits.effort = self.effort_limit_fallback
-                   #print(limits)
-                    
-        #print(jointdict)
+
+
         if 'axis' in jointdict and jtype != 'fixed':
             axis_string = jointdict['axis'].replace(',', ' ')
 
