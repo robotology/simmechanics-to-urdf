@@ -310,7 +310,7 @@ class Converter:
             # is requested in the YAML file
             if( self.mirroredLinks is not None ):
                 if( fdict['name'] == 'CG' and parent_link in self.mirroredLinks ):
-                    offset[2] = -offset[0]; 
+                    offset[2] = -offset[2]; 
            
             units = fdict['positionUnits']
             for i in range(0, len(offset)):
