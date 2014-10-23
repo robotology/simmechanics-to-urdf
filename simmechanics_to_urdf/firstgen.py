@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import os
 
 import xml.dom.minidom
 import lxml.etree
@@ -174,7 +175,16 @@ class Converter:
         self.root = configuration.get('root', None)
         self.extrajoints = configuration.get('extrajoints', {})
         self.extraframes = []
-        self.filenameformat = configuration.get('filenameformat', "%s")
+        self.filenameformat = configuration.get('filenameformat', None)
+        self.filenameformatchangeext = configuration.get('filenameformatchangeext', None)
+        if( self.filenameformat is None and self.filenameformatchangeext is None ):
+            # if neither filenameformat nor filenameformatchangeext is defined, use the default
+            self.filenameformat = '%s'
+        if( self.filenameformat is not None and self.filenameformatchangeext is not None ):
+            #    
+            print("Error: both filenameformat and filenameformatchangeext are defined")
+            assert(False)
+
         self.forcelowercase = configuration.get('forcelowercase', True)
         scale_str = configuration.get('scale', None)
         if( scale_str is not None ):
@@ -561,7 +571,12 @@ class Converter:
             filename = linkdict['geometryFileName']
             if self.forcelowercase:
                 filename = filename.lower()
-            filename = self.filenameformat % filename
+
+            if ( self.filenameformat is not None ):
+                filename = self.filenameformat % filename
+            else:
+                filenameNoExt =  os.path.splitext(filename)[0]
+                filename = self.filenameformatchangeext % filenameNoExt
 
             visual.geometry = urdf_parser_py.urdf.Mesh(filename, self.scale)
             collision.geometry = visual.geometry
