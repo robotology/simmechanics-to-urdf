@@ -308,8 +308,9 @@ class Converter:
             # mirrored links to be wrongly placed. We add here 
             # some specific workaround for those link, if this 
             # is requested in the YAML file
-            if( fdict['name'] == 'CG' and parent_link in self.mirroredLinks ):
-                offset[2] = -offset[0]; 
+            if( self.mirroredLinks is not None ):
+                if( fdict['name'] == 'CG' and parent_link in self.mirroredLinks ):
+                    offset[2] = -offset[0]; 
            
             units = fdict['positionUnits']
             for i in range(0, len(offset)):
