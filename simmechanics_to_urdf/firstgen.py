@@ -204,6 +204,11 @@ class Converter:
         for frame in configuration.get('moreframes', []):
             self.tfman.add(frame['offset'], frame['orientation'], frame['parent'], frame['child'])
 
+        # SimMechanics bug intertia workaround
+        self.inertiaWorkaround = configuration.get('inertiaWorkaround',None);
+        self.mirroredLinks = self.inertiaWorkaround["mirroredLinks"].split()
+
+
     def parseJointCSVConfig(self, configFile):
         """Parse the CSV configuration File, if it exists."""
         self.joint_configuration = {}
@@ -284,6 +289,15 @@ class Converter:
             fdict['parent'] = parent_link
 
             offset = getlist(fdict['position'])
+
+            # for models mirrored in Creo there is a strange bug 
+            # in SimMechanics Link that causes the inertia of the 
+            # mirrored links to be wrongly placed. We add here 
+            # some specific workaround for those link, if this 
+            # is requested in the YAML file
+            if( fdict['name'] == 'CG' and parent_link in self.mirroredLinks ):
+                offset[2] = -offset[0]; 
+           
             units = fdict['positionUnits']
             for i in range(0, len(offset)):
                 offset[i] = convert(offset[i], units)
