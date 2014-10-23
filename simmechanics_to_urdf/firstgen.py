@@ -653,6 +653,9 @@ class Converter:
             limits = urdf_parser_py.urdf.JointLimit(None, None)
             for (k,v) in jointdict['limits'].items():
                 setattr(limits, k, v)
+            if( jtype == "continuous" ):
+                jtype = "revolute";
+
         else:
            #if present, load limits from csv joint configuration file
            #note: angle in csv joints configuration file angles are represented as DEGREES
@@ -675,6 +678,10 @@ class Converter:
                        limits.effort = float(conf.get("effort_limit"))
                    else:
                        limits.effort = self.effort_limit_fallback
+                   #if adding limits, switching the joint type to revolute
+                   if( jtype == "continuous" ):
+                       jtype = "revolute";
+
 
 
         if 'axis' in jointdict and jtype != 'fixed':
