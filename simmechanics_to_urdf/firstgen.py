@@ -216,7 +216,10 @@ class Converter:
 
         # SimMechanics bug intertia workaround
         self.inertiaWorkaround = configuration.get('inertiaWorkaround',None);
-        self.mirroredLinks = self.inertiaWorkaround["mirroredLinks"].split()
+        if( self.inertiaWorkaround is not None ):
+            self.mirroredLinks = self.inertiaWorkaround["mirroredLinks"].split()
+        else: 
+            self.mirroredLinks = None;
 
 
     def parseJointCSVConfig(self, configFile):
