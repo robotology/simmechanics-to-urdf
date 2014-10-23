@@ -214,12 +214,15 @@ class Converter:
         for frame in configuration.get('moreframes', []):
             self.tfman.add(frame['offset'], frame['orientation'], frame['parent'], frame['child'])
 
-        # SimMechanics bug intertia workaround
+        # SimMechanics bug inertia workaround
         self.inertiaWorkaround = configuration.get('inertiaWorkaround',None);
         if( self.inertiaWorkaround is not None ):
             self.mirroredLinks = self.inertiaWorkaround["mirroredLinks"].split()
         else: 
             self.mirroredLinks = None;
+
+        # Get a list of joints for which we want to invert the rotation axis direction
+        self.reverseRotationAxis = configuration.get('reverseRotationAxis',[]);
 
 
     def parseJointCSVConfig(self, configFile):
@@ -716,14 +719,15 @@ class Converter:
                        jtype = "revolute";
 
 
-
         if 'axis' in jointdict and jtype != 'fixed':
             axis_string = jointdict['axis'].replace(',', ' ')
 
             #print("axis string " + str(axis_string))
             axis = [float(axis_el) for axis_el in axis_string.split()]
             #print("axis " + str(axis))
-
+            if( id in self.reverseRotationAxis ):
+                for i in range(0,3):
+                    axis[i] = -axis[i]
 
         # Define the origin
         (off, rot) = self.tfman.get("X" + pid, "X" + cid)
