@@ -67,3 +67,31 @@ of the SimMechanics model, useful for debugging, while selecting xml it will out
 #### YAML Parameter File
 
 #### CSV  Parameter File
+Using the `--csv-joints` options it is possible to load some joint-related information from a csv
+file. The rationale for using CSV over YAML for some information related to the model (for example joint limits) is to use a format that it is easier to modify  using common spreadsheet tools like Excel/LibreOffice Calc, that can be easily used also by people without a background in computer science. 
+
+##### Format
+The CSV file is loaded by loaded by the python `csv` module, so every dialect supported 
+by the [`csv.Sniffer()`](https://docs.python.org/library/csv.html#csv.Sniffer) is automatically
+supported by `simmechanics-to-urdf`. 
+
+The CSV file is formed by a header line followed by several content lines, 
+as in this example:
+~~~
+joint_name,lower_limit,upper_limit
+torso_yaw,-20.0,20.0
+torso_roll,-20.0,20.0
+~~~
+
+The order of the elements in header line is arbitrary, but the supported attributes
+are listed in the following:
+
+| Attribute name | Required | Unit of Measure |   Description  |
+|:--------------:|:--------:|:----------------:|:---------------:|
+| joint_name     |  **Yes**  |      -          | Name of the joint to which the content line is referring | 
+| lower_limit    |  No      | Degrees         | `lower` attribute of the `limit` child element of the URDF `joint`. **Please note that we specify this limit here in Degrees, but in the urdf it is expressed in Radians, the script will take care of  internally converting this parameter.** |  
+| upper_limit    |  No      | Degrees         | `upper` attribute of the `limit` child element of the URDF `joint`. **Please note that we specify this limit here in Degrees, but in the urdf it is expressed in Radians, the script will take care of  internally converting this parameter.** |  
+| velocity_limit | No      | Radians/second    | `velocity` attribute of the `limit` child element of the URDF `joint`.
+| effort_limit | No      |  Newton meters    | `effort` attribute of the `limit` child element of the URDF `joint`.
+| damping  | No      |  Newton meter seconds / radians    | `damping` of the `dynamics` child element of the URDF `joint`.
+| friction | No      |  Newton meters    | `friction` of the `dynamics` child element of the URDF `joint`.
