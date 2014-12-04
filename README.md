@@ -65,6 +65,30 @@ of the SimMechanics model, useful for debugging, while selecting xml it will out
 ### Configuration files
 
 #### YAML Parameter File
+The YAML format is used to pass parameters to the script to customized the conversion process.
+The file is loaded using the Python (yaml)[http://pyyaml.org/] module. 
+The parameter accepted by the script are documented in the following. 
+
+
+##### Naming Parameters 
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| rename        | Map  | {} (Empty Map) | Structure mapping the SimMechanics XML names to the desired URDF names.  |
+
+
+##### Root Parameters
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| root             | String  | First body in the file | Changes the root body of the tree |
+
+##### Mesh Parameters 
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| `filenameformat` |  String | %s  | Used for translating the filenames in the exported XML to the URDF filenames, using a formatting string. Example: "package://my_package//folder/%sb" - resolves to the package name and adds a "b" at the end to indicate a binary stl. |
+| `filenameformatchangeext` | String | %s  | Similar to filenameformat, but use to also change the file extensions and not only the path of the filenames |
+| `forcelowercase` |  Boolean | False | Used for translating the filenames. Ff True, it forces all filenames to be lower case. |
+| `scale` | String |  None | If this parameter is defined, the scale attribute of the mesh in the URDF will be set to its value. Example: "0.01 0.01 0.01" - if your meshes were saved using centimeters as units instead of meters.  |
+
 
 #### CSV  Parameter File
 Using the `--csv-joints` options it is possible to load some joint-related information from a csv
@@ -91,7 +115,7 @@ are listed in the following:
 | joint_name     |  **Yes**  |      -          | Name of the joint to which the content line is referring | 
 | lower_limit    |  No      | Degrees         | `lower` attribute of the `limit` child element of the URDF `joint`. **Please note that we specify this limit here in Degrees, but in the urdf it is expressed in Radians, the script will take care of  internally converting this parameter.** |  
 | upper_limit    |  No      | Degrees         | `upper` attribute of the `limit` child element of the URDF `joint`. **Please note that we specify this limit here in Degrees, but in the urdf it is expressed in Radians, the script will take care of  internally converting this parameter.** |  
-| velocity_limit | No      | Radians/second    | `velocity` attribute of the `limit` child element of the URDF `joint`.
+| velocity_limit | No      | Radians/second    | `velocity` attribute of the `limit` child element of the URDF `joint`. |
 | effort_limit | No      |  Newton meters    | `effort` attribute of the `limit` child element of the URDF `joint`.
-| damping  | No      |  Newton meter seconds / radians    | `damping` of the `dynamics` child element of the URDF `joint`.
-| friction | No      |  Newton meters    | `friction` of the `dynamics` child element of the URDF `joint`.
+| damping  | No      |  Newton meter seconds / radians    | `damping` of the `dynamics` child element of the URDF `joint`. |
+| friction | No      |  Newton meters    | `friction` of the `dynamics` child element of the URDF `joint`. |
