@@ -87,6 +87,11 @@ The parameter accepted by the script are documented in the following.
 |:----------------:|:---------:|:------------:|:-------------:|
 | root             | String  | First body in the file | Changes the root body of the tree |
 
+##### Frame Parameters 
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| linkFrames       | Map | {} (Empty Map) | Structure mapping the link names to the displayName of their desired frame. Unfortunatly in URDF the link frame origin placement is not free, but it is constrained to be place on the parent joint axis, hence this option is for now reserved to the root link and to links connected to their parent by a fixed joint | 
+
 ##### Mesh Parameters 
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
@@ -95,6 +100,27 @@ The parameter accepted by the script are documented in the following.
 | `forcelowercase` |  Boolean | False | Used for translating the filenames. Ff True, it forces all filenames to be lower case. |
 | `scale` | String |  None | If this parameter is defined, the scale attribute of the mesh in the URDF will be set to its value. Example: "0.01 0.01 0.01" - if your meshes were saved using centimeters as units instead of meters.  |
 
+##### Sensors Parameters
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| ForceTorqueSensors | Array  |  empty      | Array of option for exporting 6-Axis ForceTorque sensors |
+| IMUs            | Array  |  empty      | Array of option for exporting IMU sensors |
+
+###### ForceTorque Sensors Parameters 
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| JointName | String  |  empty      | Name of the Joint for which this sensor measure the ForceTorque. |
+| DirectionChildToParent | Bool | True | True if the sensor measures the force excerted by the child on the parent, false otherwise | 
+| SensorName      | String   | LinkName_FrameName | Name of the sensor, to be used in the output URDF file |
+| ExportFrameInURDF | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame | 
+
+###### IMU Sensors Paraameters 
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| LinkName         | String  |  empty      | Name of the Link at which the IMU is rigidly attached. |
+| FrameName        | String  | empty       | `displayName` of the frame in which the sensor measure is expressed. The selected frame must be attached to the `LinkName` link. |
+| SensorName      | String   | LinkName_FrameName | Name of the sensor, to be used in the output URDF file |
+| ExportFrameInURDF | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame | 
 
 #### CSV  Parameter File
 Using the `--csv-joints` options it is possible to load some joint-related information from a csv
