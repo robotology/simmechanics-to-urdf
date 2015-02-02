@@ -10,12 +10,18 @@ More specifically, this library at the moment just support first-generation SimM
 Based on the [original version](http://wiki.ros.org/simmechanics_to_urdf) by [David V. Lu!!](http://www.cse.wustl.edu/~dvl1/).
 
 #### Dependencies
+- [Python](https://www.python.org/)
 - [lxml](http://lxml.de/)
 - [PyYAML](http://pyyaml.org/)
 - [NumPy](http://www.numpy.org/)
 - [urdf_parser_py](https://github.com/ros/urdfdom/tree/master/urdf_parser_py)
 
 ## Installation
+
+#### Windows
+##### Install dependencies
+This conversion script uses Python, so you have to install Python for Windows:
+https://www.python.org/downloads/windows/ .
 
 #### Debian/Ubuntu
 ##### Install dependencies
@@ -27,7 +33,7 @@ sudo apt-get install python-lxml python-yaml python-numpy
 You can install `urdf_parser_py` from the urdfdom git repository:
 ~~~
 git clone https://github.com/ros/urdfdom
-cd 
+cd urdfdom/urdf_parser_py
 sudo python setup.py install
 ~~~
 
