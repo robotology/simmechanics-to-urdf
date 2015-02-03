@@ -186,6 +186,7 @@ class Converter:
             assert(False)
 
         self.forcelowercase = configuration.get('forcelowercase', True)
+        self.exportAllUseradded = configuration.get('exportAllUseradded', False)
         scale_str = configuration.get('scale', None)
         if( scale_str is not None ):
             self.scale = [float(scale_el) for scale_el in scale_str.split()]
@@ -325,10 +326,10 @@ class Converter:
             # use the name plus a suffix (for CG or CS1...
             # If the frame does not have a reference number,
             # but it is a USERADDED frame (frame added on the CAD
-            # for export in simmechanics) export the frame using the
-            # displayName tag
+            # for export in simmechanics) and the exportAllUserAdded 
+            # option is set to True, export the frame using the displayName tag 
             # otherwise ignore the frame
-            if fdict['nodeID'].endswith('(USERADDED)'):
+            if fdict['nodeID'].endswith('(USERADDED)') and self.exportAllUseradded:
                useradded_frame_name = self.getName(fdict['displayName'])
                fid = useradded_frame_name + "CS1"
                extraframe = {'parentlink':parent_link,'framename':useradded_frame_name}
