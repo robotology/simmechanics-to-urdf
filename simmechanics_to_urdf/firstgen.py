@@ -126,6 +126,8 @@ class Converter:
         self.usedcolors = {}
         self.ref2nameMap = {}
         self.realRootLink = None
+        # map mapping USERADDED linkName+displayName to fid of the frame
+        self.linkNameDisplayName2fid = {}
 
         #Start the Custom Transform Manager
         self.tfman = CustomTransformManager()
@@ -186,7 +188,25 @@ class Converter:
             assert(False)
 
         self.forcelowercase = configuration.get('forcelowercase', True)
+
+        ## Frames related options
+        
+        # If the exportAllUserAdded frame is setted, export all USERADDED frames
         self.exportAllUseradded = configuration.get('exportAllUseradded', False)
+
+        # Load the linkFrames 
+        self.linkFrames = configuration.get('linkFrames')
+        self.linkFramesMap = {}
+        for link_frame in self.linkFrames:
+            self.linkFramesMap[link_frame["link"]] = link_frame;
+
+        # Load the exported frames 
+        self.exportedFrames = configuration.get('exportedFrames')
+        self.exportedFramesMap = {}
+        for exported_frame in self.exportedFrames:
+            self.exportedFramesMap[exported_frame["frameName"]] = exported_frame;
+
+        # Load scales options
         scale_str = configuration.get('scale', None)
         if( scale_str is not None ):
             self.scale = [float(scale_el) for scale_el in scale_str.split()]
@@ -262,6 +282,7 @@ class Converter:
         """Parse the important bits of a link element"""
         linkdict = getDictionary(link)
         uid = self.getName(linkdict['name'])
+        linkdict['uid']       = uid;
         linkdict['neighbors'] = []
         linkdict['children'] = []
         linkdict['jointmap'] = {}
@@ -329,20 +350,33 @@ class Converter:
             # for export in simmechanics) and the exportAllUserAdded 
             # option is set to True, export the frame using the displayName tag 
             # otherwise ignore the frame
-            if fdict['nodeID'].endswith('(USERADDED)') and self.exportAllUseradded:
-               useradded_frame_name = self.getName(fdict['displayName'])
-               fid = useradded_frame_name + "CS1"
-               extraframe = {'parentlink':parent_link,'framename':useradded_frame_name}
-               self.extraframes = self.extraframes + [extraframe]
-               #add link to self.links structure
-               linkdict = {}
-               linkdict['name'] = useradded_frame_name
-               fdict['parent'] = useradded_frame_name
-               linkdict['neighbors'] = []
-               linkdict['children'] = []
-               linkdict['jointmap'] = {}
-               linkdict['frames'] = None
-               self.links[useradded_frame_name] = linkdict
+            if fdict['nodeID'].endswith('(USERADDED)'):
+                useradded_frame_name = self.getName(fdict['displayName'])
+ 
+                # print("useradded_frame_name: " + useradded_frame_name + " has fid " + fid);
+                # Frame is added if exportAllUseradded is setted or 
+                # if frame is part of exportedFrames structure 
+                if self.exportAllUseradded or (useradded_frame_name in self.exportedFramesMap.keys()):
+                    if( useradded_frame_name in self.exportedFramesMap.keys() ):
+                        if( "urdfFrameName" in self.exportedFramesMap[useradded_frame_name].keys() ):
+                            useradded_frame_name = self.exportedFramesMap[useradded_frame_name]["urdfFrameName"];
+
+                    fid = useradded_frame_name + "CS1"
+                    extraframe = {'parentlink':parent_link,'framename':useradded_frame_name}
+                    self.extraframes = self.extraframes + [extraframe]
+                    #add link to self.links structure
+                    linkdict = {}
+                    linkdict['name'] = useradded_frame_name
+                    fdict['parent'] = useradded_frame_name
+                    linkdict['neighbors'] = []
+                    linkdict['children'] = []
+                    linkdict['jointmap'] = {}
+                    linkdict['frames'] = None
+                    linkdict['uid'] = linkdict['name']
+                    self.links[useradded_frame_name] = linkdict
+
+                # Storing the displayName to the fid of the frame, to retrive the USERADDED frame when assigning link frames
+                self.linkNameDisplayName2fid[(parent_link,fdict['displayName'])] = fid;           
 		  
                        
 
@@ -517,8 +551,12 @@ class Converter:
                     queue.append(n)
                     link['children'].append(n)
 
-        # build new coordinate frames
+        # build new link coordinate frames
+        # URDF has the unconvenient requirement that the link frame
+        # origin should be placed in the axis of the parent joint, 
+        # so we have to place special care in 
         for id in self.links:
+ 
             link = self.links[id]
             if not 'parent' in link:
                 continue
@@ -531,18 +569,42 @@ class Converter:
                 ref = joint['parent']
                 if( joint['type'] == 'fixed' ):
                     jointIsNotFixed = False
-            # The root of each link is the offset to the joint
+            # The frame of each link is the offset to the joint
             # and the rotation of the CS1 frame
-            # but if the joint is fixed, we can preserve the original
+            # but if the joint is fixed  (or it is the root) we can preserve the original
             # frame (this is necessary for correctly exporting 
             #        USERADDED frames)
-            if( jointIsNotFixed or parentid == "GROUND" ):
+            sys.stderr.write("Processing link " + link['uid'] + "\n")
+            sys.stderr.write("parentid : "  + parentid + "\n");
+            sys.stderr.write("jointIsNotFixed " + str(jointIsNotFixed) + "\n");
+            if( jointIsNotFixed ):
             	(off1, rot1) = self.tfman.get(WORLD, ref)
             	(off2, rot2) = self.tfman.get(WORLD, id + "CS1")
             	self.tfman.add(off1, rot2, WORLD, "X" + id)
             else:
-                (off, rot) = self.tfman.get(WORLD, id + "CS1")
-                self.tfman.add(off, rot, WORLD, "X" + id)
+                # If the parent joint is fixed, by default we use 
+                # the id+"CS1" frame as the link frame. 
+                # The  frame of the link attached with a fixed joint 
+                # can be optionally set to a USERADDED frame using the 
+                # linkFrames options
+                #print(str(link))
+                #print("Link " + str(link['uid']) + " has a fixed joint parent");
+                if( link['uid'] in self.linkFramesMap.keys() ):
+                    #print(" Using " + self.linkFramesMap[link['uid']]["frame"] + " of link " + self.linkFramesMap[link['uid']]["referenceLink"] + " as link frame for " + link['uid'])
+                    #print(str(self.linkNameDisplayName2fid));
+                    new_link_frame_fid = self.linkNameDisplayName2fid[ (self.linkFramesMap[link['uid']]["referenceLink"],self.linkFramesMap[link['uid']]["frame"])];
+                    (off, rot) = self.tfman.get(WORLD,new_link_frame_fid)
+                    self.tfman.add(off, rot, WORLD, "X" + id)
+                else:
+                    if( parentid == "GROUND" ):
+                        #be consistent with the old behaviour
+                        (off1, rot1) = self.tfman.get(WORLD, ref)
+            	        (off2, rot2) = self.tfman.get(WORLD, id + "CS1")
+            	        self.tfman.add(off1, rot2, WORLD, "X" + id)
+                    else:
+                        # If nothing special happens, use CS1 as link frame
+                        (off, rot) = self.tfman.get(WORLD, id + "CS1")
+                        self.tfman.add(off, rot, WORLD, "X" + id)
 
 
     def output(self, rootid):
