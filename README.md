@@ -90,9 +90,25 @@ The parameter accepted by the script are documented in the following.
 ##### Frame Parameters 
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
-| `linkFrames`       | Map | {} (Empty Map) | Structure mapping the link names to the displayName of their desired frame. Unfortunatly in URDF the link frame origin placement is not free, but it is constrained to be place on the parent joint axis, hence this option is for now reserved to the root link and to links connected to their parent by a fixed joint | 
+| `linkFrames`       | Array | empty | Structure mapping the link names to the displayName of their desired frame. Unfortunatly in URDF the link frame origin placement is not free, but it is constrained to be place on the parent joint axis, hence this option is for now reserved to the root link and to links connected to their parent by a fixed joint | 
 | `exportAllUseradded` |  Boolean | False | If true, export all SimMechanics frame tagged with `USERADDED` in the output URDF as fake links i.e. fake link with zero mass connected to a link with a fixed joint..  |
 | `exportedFrames` | Array | empty | Array of `displayName` of UserAdded frames to export. This are exported as fixed URDF frames, i.e. fake link with zero mass connected to a link with a fixed joint. |
+
+###### Link Frames Parameters  (keys of elements of `linkFrames`)
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:-----------:|:-------------:|
+| `linkName`       | String |  Mandatory  | name of the link for which we  | 
+| `frameName`      | String | Mandatory  | 
+| `frameReferenceLink`  | String  |  empty      | `frameReferenceLink` at which the frame is attached. If `frameReferenceLink` is empty, it will default to `linkName` |
+
+
+
+###### Exported Frame Parameters (keys of elements of `exportedFrames`)
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| `frameName`       | String |  Mandatory  | `displayName` of the frame in which the sensor measure is expressed. The selected frame should be attached to the `referenceLink` link, but `referenceLink` can be be omitted if the frameName is unique in the model.   | 
+| `frameReferenceLink`  | String  |  empty      | `frameReferenceLink` at which the frame is attached. If `referenceLink` is empty, it will be selected the first USERADDED frame with the specified `frameName` |
+| `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportedFrames` option | 
 
 ##### Mesh Parameters 
 | Attribute name   | Type   | Default Value | Description  |
@@ -111,25 +127,43 @@ Sensor information can be expressed using arrays of sensor options:
 | `forceTorqueSensors` | Array  |  empty      | Array of option for exporting 6-Axis ForceTorque sensors |
 | `IMUs`            | Array  |  empty      | Array of option for exporting IMU sensors |
 
-###### ForceTorque Sensors Parameters 
+###### ForceTorque Sensors Parameters (keys of elements of `forceTorqueSensors`)
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
 | `jointName` | String  |  empty      | Name of the Joint for which this sensor measure the ForceTorque. |
 | `directionChildToParent` | Bool | True | True if the sensor measures the force excerted by the child on the parent, false otherwise | 
-| `sensorName`      | String   | JointName_FrameName | Name of the sensor, to be used in the output URDF file |
-| `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame | 
+| `sensorName`      | String   | jointName | Name of the sensor, to be used in the output URDF file |
+| `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame (as if the sensor frame was added to the `exportedFrames` array). | 
+| `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportFrameInURDF` option | 
 
 Note that for now the FT sensors sensor frame is required to be coincident with child link frame, due 
 to URDF limitations. 
 
-###### IMU Sensors Parameters 
+###### IMU Sensors Parameters (keys of elements of `IMUs`)
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
-| `linkName`         | String  |  empty      | Name of the Link at which the IMU is rigidly attached. |
-| `frameName`        | String  | empty       | `displayName` of the frame in which the sensor measure is expressed. The selected frame must be attached to the `LinkName` link. |
+| `linkName`         | String  |  Mandatory      | Name of the Link at which the IMU is rigidly attached. |
+| `frameName`        | String  |  empty      | `displayName` of the frame in which the sensor measure is expressed. The selected frame must be attached to the `referenceLink` link. If empty the frame used for the sensor is coincident with the link frame. |
+| `frameReferenceLink`    | String  | linkName    | link at which the sensor frame is attached (to make sense, this link should be rigidly attached to the `linkName`. By default `referenceLink` is assumed to be `linkName`.
 | `sensorName`      | String   | LinkName_FrameName | Name of the sensor, to be used in the output URDF file |
-| `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame | 
+| `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame (as if the sensor frame was added to the `exportedFrames` array) | 
+| `exportedFrameName` | String | sensorName+"_frame" | Name of the URDF link exported by the `exportFrameInURDF` option | 
 
+##### Mirrored Inertia Parameters 
+SimMechanics Link has some problems dealing with mirrored mechanism, in particularly when dealing with exporting inertia information. For this reason we provide 
+an option to use for some links not the inertial information (mass, center of mass, inertia matrix) provided in the SimMechanics XML, but instead to "mirror"
+the inertia information of some other link, relyng on the simmetry of the model. 
+
+TODO document this part 
+
+##### XML Blobs options 
+IF you use extensions of URDF, we frequently want to add non-standard tags as child of the `<robot>` root element. 
+Using the XMLBlobs option, you can pass an array of strings (event on multiple lines) represeting complex XML blobs that you 
+want to include in the converted URDF file. This will be included without modifications in the converted URDF file. 
+Note that every blob must have only one root element. 
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| `XMLBlobs `         | Array of String  |  []     | List of XML Blobs to include in the URDF file as children of `<robot>` |
 
 #### CSV  Parameter File
 Using the `--csv-joints` options it is possible to load some joint-related information from a csv
