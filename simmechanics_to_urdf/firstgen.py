@@ -986,7 +986,11 @@ class Converter:
                 inertial.inertia.iyy = mirroredLink_Inertia[1,1];
                 inertial.inertia.iyz = mirroredLink_Inertia[1,2]
                 inertial.inertia.izz = mirroredLink_Inertia[2,2];
- 
+                
+                # now that we expressed the inertia in the mirroredLink frame
+                # the rpy of the inertial frame is [0.0, 0.0, 0.0]
+                rpy = [0.0,0.0,0.0]
+                 
                 # Save COM and Inertia orientation
                 inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
 
