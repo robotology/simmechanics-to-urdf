@@ -948,9 +948,6 @@ class Converter:
 
                 assert(self.isValidInertiaMatrix(originalLinkInertiaFrame_Inertia,1e-3));
                 # {}^simmetryReferenceLink Inertia3D = {}^simmetryReferenceLink R_originalLink * {}^originalLink Inertia3D * {}^originalLink R_simmetryReferenceLink
-                # sys.stderr.write("simmetryReferenceLink_R_originalLinkInertiaFrame: " + str(simmetryReferenceLink_R_originalLinkInertiaFrame.shape) +"\n");
-                #  sys.stderr.write("originalLinkInertiaFrame_Inertia: " + str(originalLinkInertiaFrame_Inertia.shape) +"\n");
-                # sys.stderr.write("originalLinkInertiaFrame_R_simmetryReferenceLink: " + str(originalLinkInertiaFrame_R_simmetryReferenceLink.shape) +"\n");
                 simmetryReferenceLink_Inertia = numpy.dot(simmetryReferenceLink_R_originalLinkInertiaFrame,numpy.dot(originalLinkInertiaFrame_Inertia,originalLinkInertiaFrame_R_simmetryReferenceLink))
 
 
@@ -964,22 +961,31 @@ class Converter:
 
                 assert(self.isValidInertiaMatrix(simmetryReferenceLink_Inertia,1e-3)); 
 
-                # The inertia orientation is now the one of R_simmetryReferenceLink, so we have to put in urdf pose  {}^mirroredLink R_simmetryReferenceLink
-                (off_dummy,rot) = self.tfman.get("X" + mirroredLink, "X" + simmetryReferenceLink)
+                # We want the inertia orientation to be the one of the link, to avoid 
+                # a non zero inertial rpy elements can cause bugs.
+                # see https://bitbucket.org/yue_hu/icubheidelberg01/issue/5/robot-mass-is-wrong#comment-15495878
+                # so we have to express the inertia in the link frame 
+                
+                # Get {}^mirroredLink R_simmetryReferenceLink
+                mirroredLink_T_simmetryReferenceLink = self.tfman.getHomTransform("X" + mirroredLink, "X" + simmetryReferenceLink)
+                mirroredLink_R_simmetryReferenceLink = mirroredLink_T_simmetryReferenceLink[0:3,0:3];
+                
+                # Get {}^simmetryReferenceLink R_mirroredLink
+                simmetryReferenceLink_R_mirroredLink = mirroredLink_R_simmetryReferenceLink.transpose();
+                
+                # {}^mirroredLink Inertia3D = {}^mirroredLink R_simmetryReferenceLink * {}^R_simmetryReferenceLink Inertia3D * {}^R_simmetryReferenceLink R_mirroredLink
+                mirroredLink_Inertia = numpy.dot(mirroredLink_R_simmetryReferenceLink,numpy.dot(simmetryReferenceLink_Inertia,simmetryReferenceLink_R_mirroredLink))
 
-                rpy = list(euler_from_quaternion(rot))
-
+                assert(self.isValidInertiaMatrix(mirroredLink_Inertia,1e-3)); 
 
                 # Save inertia matrix
-                # sys.stderr.write("Inertia RPY of link " + str(id) + "is " + str(rpy) + "\n");
-                # sys.stderr.write("Inertia matrix of link " + str(id) + "is " + str(simmetryReferenceLink_Inertia) + "\n");
                 inertial.inertia = urdf_parser_py.urdf.Inertia()
-                inertial.inertia.ixx = simmetryReferenceLink_Inertia[0,0];
-                inertial.inertia.ixy = simmetryReferenceLink_Inertia[0,1];
-                inertial.inertia.ixz = simmetryReferenceLink_Inertia[0,2];
-                inertial.inertia.iyy = simmetryReferenceLink_Inertia[1,1];
-                inertial.inertia.iyz = simmetryReferenceLink_Inertia[1,2]
-                inertial.inertia.izz = simmetryReferenceLink_Inertia[2,2];
+                inertial.inertia.ixx = mirroredLink_Inertia[0,0];
+                inertial.inertia.ixy = mirroredLink_Inertia[0,1];
+                inertial.inertia.ixz = mirroredLink_Inertia[0,2];
+                inertial.inertia.iyy = mirroredLink_Inertia[1,1];
+                inertial.inertia.iyz = mirroredLink_Inertia[1,2]
+                inertial.inertia.izz = mirroredLink_Inertia[2,2];
  
                 # Save COM and Inertia orientation
                 inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
