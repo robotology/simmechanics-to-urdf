@@ -860,20 +860,38 @@ class Converter:
                 for i in range(0,len(matrix)):
                     matrix[i] = convert(matrix[i], units)
 
-                inertial.inertia = urdf_parser_py.urdf.Inertia()
-                inertial.inertia.ixx = matrix[0]
-                inertial.inertia.ixy = matrix[1]
-                inertial.inertia.ixz = matrix[2]
-                inertial.inertia.iyy = matrix[4]
-                inertial.inertia.iyz = matrix[5]
-                inertial.inertia.izz = matrix[8]
 
                 # Inertial origin is the center of gravity
                 (off, rot) = self.tfman.get("X" + id, id+"CG")
-                #print("X"+id+" to "+id+"CG:")
-                #print(off)
-                #print(rot)
-                rpy = list(euler_from_quaternion(rot))
+
+                # We prefer to express the inertia in the link frame
+                # to always have a zero inertial rpy pose 
+                rpy = [0.0, 0.0, 0.0];
+                
+                # We then have to convert the inertia 
+                # from the inertial orientation
+                # to the link orientation
+                # (it will remain expressed wrt the COM)
+                InertiaFrame_Inertia = numpy.reshape(numpy.array(matrix),[3,3])
+
+                # Get {}^link R_InertiaFrame
+                link_T_InertiaFrame = self.tfman.getHomTransform("X" + id, id+"CG")
+                link_R_InertiaFrame = link_T_InertiaFrame[0:3,0:3];
+                
+                # Get {}^InertiaFrame R_link
+                InertiaFrame_R_link = link_R_InertiaFrame.transpose();
+                
+                # Get link_Inertia 
+                link_Inertia = numpy.dot(link_R_InertiaFrame,numpy.dot(InertiaFrame_Inertia,InertiaFrame_R_link))
+                
+                inertial.inertia = urdf_parser_py.urdf.Inertia()
+                inertial.inertia.ixx = link_Inertia[0,0];
+                inertial.inertia.ixy = link_Inertia[0,1];
+                inertial.inertia.ixz = link_Inertia[0,2];
+                inertial.inertia.iyy = link_Inertia[1,1];
+                inertial.inertia.iyz = link_Inertia[1,2]
+                inertial.inertia.izz = link_Inertia[2,2];
+
 
                 inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
             else: 
