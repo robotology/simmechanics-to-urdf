@@ -1,16 +1,180 @@
+# Meshes options 
 scale: "0.001 0.001 0.001"
 forcelowercase: Yes
-filenameformat: "model://legs_simmechanics/meshes/%s"
-rename: 
-    ICUB3_WAIST_PITCH--ICUB3_HIP_FLEX-EXT_LEFT: l_hip_pitch
-    ICUB3_HIP_FLEX-EXT_LEFT--ICUB3_HIP_ABD-ADD_LEFT: l_hip_roll
-    ICUB3_HIP_ABD-ADD_LEFT--ICUB3_HIP_ROT_LEFT: l_hip_yaw
-    ICUB3_HIP_ROT_LEFT--ICUB3_KNEE_FLEX-EXT_LEFT: l_knee
-    ICUB3_KNEE_FLEX-EXT_LEFT--ICUB3_ANKLE_FLEX-EXT_LEFT: l_ankle_pitch
-    ICUB3_ANKLE_FLEX-EXT_LEFT--ICUB3_ANKLE_ABD-ADD_LEFT: l_ankle_roll
-    ICUB3_WAIST_PITCH--ICUB3_HIP_FLEX_EXT_RIGHT: r_hip_pitch
-    ICUB3_HIP_FLEX_EXT_RIGHT--ICUB3_HIP_ABD-ADD_RIGHT: r_hip_roll
-    ICUB3_HIP_ABD-ADD_RIGHT--ICUB3_HIP_ROT_RIGHT: r_hip_yaw
-    ICUB3_HIP_ROT_RIGHT--ICUB3_KNEE_FLEX-EXT_RIGHT: r_knee
-    ICUB3_KNEE_FLEX-EXT_RIGHT--ICUB3_ANKLE_FLEX-EXT_RIGHT: r_ankle_pitch
-    ICUB3_ANKLE_FLEX-EXT_RIGHT--ICUB3_ANKLE_ABD-ADD_RIGHT: r_ankle_roll
+filenameformatchangeext: "model://iCubHeidelberg01_model/dae_meshes/%s.dae"
+
+# Rename options (map Creo names to URDF names)
+rename:
+ RootPart--SIM_SEA_ROOT_LINK: base_fixed_joint
+ SIM_SEA_ROOT_LINK--SIM_SEA_LAP_BELT_1: torso_pitch
+ SIM_ROOT_LINK--SIM_LAP_BELT_1: torso_pitch
+ SIM_LAP_BELT_1--SIM_LAP_BELT_2: torso_roll
+ SIM_SEA_LAP_BELT_1--SIM_KOR_LAP_BELT_2: torso_roll
+ SIM_KOR_LAP_BELT_2--SIM_KOR_CHEST: torso_yaw
+ SIM_LAP_BELT_2--SIM_CHEST_ : torso_yaw
+ SIM_ROOT_LINK--SIM_SEA_R_HIP_1: r_hip_pitch
+ SIM_SEA_ROOT_LINK--SIM_SEA_R_HIP_1: r_hip_pitch
+ SIM_ROOT_LINK--SIM_SEA_L_HIP_1: l_hip_pitch
+ SIM_SEA_ROOT_LINK--SIM_SEA_L_HIP_1: l_hip_pitch
+ SIM_KOR_CHEST--WEIGHT-1KG: chest_weight_1
+ SIM_KOR_CHEST--WEIGHT-1KG-1: chest_weight_2
+ SIM_KOR_CHEST--WEIGHT-1KG-2: chest_weight_3
+ SIM_KOR_CHEST--WEIGHT-1KG-3: chest_weight_4
+ SIM_KOR_CHEST--WEIGHT-1KG-4: chest_weight_5
+ SIM_KOR_CHEST--WEIGHT-1KG-5: chest_weight_6
+ SIM_CHEST_--WEIGHT-1KG: chest_weight_1
+ SIM_CHEST_--WEIGHT-1KG-1: chest_weight_2
+ SIM_CHEST_--WEIGHT-1KG-2: chest_weight_3
+ SIM_CHEST_--WEIGHT-1KG-3: chest_weight_4
+ SIM_CHEST_--WEIGHT-1KG-4: chest_weight_5
+ SIM_CHEST_--WEIGHT-1KG-5: chest_weight_6
+ WEIGHT-1KG--WEIGHT-1KG-1: weight_weight_1
+ WEIGHT-1KG-2--WEIGHT-1KG-3: weight_weight_2
+ WEIGHT-1KG-4--WEIGHT-1KG-5: weight_weight_3
+ RootGround--RootPart: base_joint_unknown
+ RootPart--SIM_SEA_R_HIP_1: r_hip_unknown
+ SIM_SEA_R_HIP_1--SIM_SEA_R_HIP_2: r_hip_roll
+ SIM_SEA_R_HIP_2--SIM_SEA_R_UPPER_THIGH: r_leg_ft_sensor
+ SIM_SEA_R_UPPER_THIGH--SIM_SEA_R_THIGH: r_hip_yaw
+ SIM_SEA_R_THIGH--SIM_SEA_R_SHANK: r_knee
+ SIM_SEA_R_SHANK--SIM_SEA_R_ANKLE: r_ankle_pitch
+ SIM_SEA_R_ANKLE--SIM_SEA_R_FOOT: r_ankle_roll
+ SIM_SEA_R_FOOT--SIM_SEA_R_SOLE: r_foot_ft_sensor
+ RootPart--SIM_SEA_L_HIP_1: l_hip_unknown
+ SIM_SEA_L_HIP_1--SIM_SEA_L_HIP_2: l_hip_roll
+ SIM_SEA_L_HIP_2--SIM_SEA_L_UPPER_THIGH: l_leg_ft_sensor
+ SIM_SEA_L_UPPER_THIGH--SIM_SEA_L_THIGH: l_hip_yaw
+ SIM_SEA_L_THIGH--SIM_SEA_L_SHANK: l_knee
+ SIM_SEA_L_SHANK--SIM_SEA_L_ANKLE: l_ankle_pitch
+ SIM_SEA_L_ANKLE--SIM_SEA_L_FOOT: l_ankle_roll
+ SIM_SEA_L_FOOT--SIM_SEA_L_SOLE: l_foot_ft_sensor
+ RootPart: base_link
+ SIM_ROOT_LINK: root_link
+ SIM_SEA_ROOT_LINK: root_link
+ SIM_KOR_CHEST: chest
+ SIM_CHEST_: chest
+ SIM_SEA_LAP_BELT_1: torso_1
+ SIM_KOR_LAP_BELT_2: torso_2
+ SIM_LAP_BELT_1: torso_1
+ SIM_LAP_BELT_2: torso_2
+ SIM_SEA_R_HIP_1: r_hip_1
+ SIM_SEA_R_HIP_2: r_hip_2
+ SIM_SEA_R_UPPER_THIGH: r_hip_3
+ SIM_SEA_R_THIGH: r_upper_leg
+ SIM_SEA_R_SHANK: r_lower_leg
+ SIM_SEA_R_ANKLE: r_ankle_1
+ SIM_SEA_R_FOOT: r_ankle_2
+ SIM_SEA_R_SOLE: r_foot
+ SIM_SEA_L_HIP_1: l_hip_1
+ SIM_SEA_L_HIP_2: l_hip_2
+ SIM_SEA_L_UPPER_THIGH: l_hip_3
+ SIM_SEA_L_THIGH: l_upper_leg
+ SIM_SEA_L_SHANK: l_lower_leg
+ SIM_SEA_L_ANKLE: l_ankle_1
+ SIM_SEA_L_FOOT: l_ankle_2
+ SIM_SEA_L_SOLE: l_foot
+
+# Frames options 
+exportAllUseradded: No
+
+exportedFrames:
+  - frameName: SCSYS_L_SOLE
+    exportedFrameName: l_sole
+  - frameName:  SCSYS_R_SOLE
+    frameReferenceLink: r_foot
+    exportedFrameName: r_sole
+
+linkFrames: 
+  - linkName: root_link
+    frameName: SCSYS_IKIN_ROOT_LINK
+  - linkName: l_hip_3
+    frameName: SCSYS_FT45
+    frameReferenceLink: l_hip_2
+  - linkName: r_hip_3
+    frameName: SCSYS_FT45
+    frameReferenceLink: r_hip_2
+  - linkName: l_foot
+    frameName: SCSYS_FT45
+    frameReferenceLink: l_ankle_2
+  - linkName: r_foot
+    frameName: SCSYS_FT45
+    frameReferenceLink: r_ankle_2
+
+# Sensors options
+forceTorqueSensors:
+  - jointName: l_leg_ft_sensor
+    directionChildToParent: Yes
+  - jointName: r_leg_ft_sensor
+    directionChildToParent: Yes
+  - jointName: l_foot_ft_sensor
+    directionChildToParent: Yes
+  - jointName: r_foot_ft_sensor
+    directionChildToParent: Yes
+
+IMUs:
+  - linkName: chest
+    frameName: SCSYS_MTX_ACCEL
+    sensorName: "imu_frame"
+    exportFrameInURDF: Yes
+
+# Workaround options 
+mirroredInertia:
+- mirroredLink: l_hip_1
+  originalLink: r_hip_1
+  simmetryReferenceLink: root_link
+  symmetryPlane: xz 
+- mirroredLink: l_hip_2
+  originalLink: r_hip_2
+  simmetryReferenceLink: root_link
+  symmetryPlane: xz 
+- mirroredLink: l_hip_3
+  originalLink: r_hip_3
+  simmetryReferenceLink: root_link
+  symmetryPlane: xz 
+- mirroredLink: l_upper_leg
+  originalLink: r_upper_leg
+  simmetryReferenceLink: root_link
+  symmetryPlane: xz 
+- mirroredLink: l_lower_leg
+  originalLink: r_lower_leg
+  simmetryReferenceLink: root_link
+  symmetryPlane: xz 
+- mirroredLink: l_ankle_1
+  originalLink: r_ankle_1
+  simmetryReferenceLink: root_link
+  symmetryPlane: xz 
+- mirroredLink: l_ankle_2
+  originalLink: r_ankle_2
+  simmetryReferenceLink: root_link
+  symmetryPlane: xz 
+- mirroredLink: l_foot
+  originalLink: r_foot
+  simmetryReferenceLink: root_link
+  symmetryPlane: xz 
+
+reverseRotationAxis:
+  l_hip_roll
+  l_hip_yaw
+  l_ankle_roll
+  r_hip_pitch
+  r_ankle_roll
+
+XMLBlobs: 
+  - |
+        <gazebo>
+        <plugin name="controlboard_torso" filename="libgazebo_yarp_controlboard.so">
+            <yarpConfigurationFile>model://iCubHeidelberg01_model/conf/gazebo_iCubHeidelberg01_torso.ini</yarpConfigurationFile>
+        </plugin>
+        <plugin name="controlboard_right_leg" filename="libgazebo_yarp_controlboard.so">
+            <yarpConfigurationFile>model://iCubHeidelberg01_model/conf/gazebo_iCubHeidelberg01_right_leg.ini</yarpConfigurationFile>
+        </plugin>
+        <plugin name="controlboard_left_leg" filename="libgazebo_yarp_controlboard.so">
+            <yarpConfigurationFile>model://iCubHeidelberg01_model/conf/gazebo_iCubHeidelberg01_left_leg.ini</yarpConfigurationFile>
+        </plugin>
+        <plugin name="apply_external_wrench" filename="libgazebo_yarp_externalwrench.so" >
+            <robotNamefromConfigFile>model://iCubHeidelberg01_model/conf/gazebo_iCubHeidelberg01_robotname.ini</robotNamefromConfigFile>
+        </plugin>
+        </gazebo>
+
+
+  
