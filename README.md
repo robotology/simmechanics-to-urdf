@@ -161,9 +161,10 @@ IF you use extensions of URDF, we frequently want to add non-standard tags as ch
 Using the XMLBlobs option, you can pass an array of strings (event on multiple lines) represeting complex XML blobs that you 
 want to include in the converted URDF file. This will be included without modifications in the converted URDF file. 
 Note that every blob must have only one root element. 
+
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
-| `XMLBlobs `         | Array of String  |  []     | List of XML Blobs to include in the URDF file as children of `<robot>` |
+| `XMLBlobs `         | Array of String  |  [] (empty array)   | List of XML Blobs to include in the URDF file as children of `<robot>` |
 
 #### CSV  Parameter File
 Using the `--csv-joints` options it is possible to load some joint-related information from a csv
