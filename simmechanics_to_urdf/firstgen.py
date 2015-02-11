@@ -255,7 +255,7 @@ class Converter:
         self.exportAllUseradded = configuration.get('exportAllUseradded', False)
 
         # Load the linkFrames 
-        self.linkFrames = configuration.get('linkFrames')
+        self.linkFrames = configuration.get('linkFrames',[])
         self.linkFramesMap = {}
         for link_frame in self.linkFrames: 
             # add default frameReferenceLink if not included

@@ -24,3 +24,4 @@ script:
 - cd test
 - simmechanics_to_urdf LEGS_MECHANISM.xml --yaml legs_simmechanics_options.yaml --csv-joints joint_parameters.csv --output xml
 - simmechanics_to_urdf LEGS_MECHANISM.xml --yaml legs_simmechanics_options.yaml --csv-joints joint_parameters.csv --output graph
+- simmechanics_to_urdf LEGS_MECHANISM.xml --output graph
