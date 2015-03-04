@@ -510,10 +510,12 @@ class Converter:
         type = element.getElementsByTagName("Primitive")
 
         # If there multiple elements, assume a fixed joint
+        # \todo TODO fix and remove this assumption
         if len(type)==1:
             pdict = getDictionary(type[0])
             joint['type'] = pdict['name']
             joint['axis'] = pdict['axis']
+            joint['axisReferenceFrame'] = pdict['referenceFrame']
             if joint['type'] == 'weld':
                 joint['type'] = 'fixed'
         else:
@@ -543,6 +545,7 @@ class Converter:
             if 'axis' in jdict:
                 #print("axis" + str(jdict['axis']))
                 joint['axis'] = jdict['axis']
+                joint['axisReferenceFrame'] = jdict['referenceFrame']
             if 'limits' in jdict:
                 joint['limits'] = jdict['limits']
 
@@ -713,7 +716,7 @@ class Converter:
                     axis_normalized = axis_np/numpy.linalg.norm(axis_np);
                      
                     # Projection math: project the frame origin on the joint axis
-                    new_link_frame_off_projected = numpy.dot(new_link_frame_offset_np-joint_offset_np,axis_normalized)*axis_normalized+joint_offset_np;
+                    new_link_frame_off_projected = numpy.dot(new_link_frame_off_np-joint_offset_np,axis_normalized)*axis_normalized+joint_offset_np;
 
             	    self.tfman.add(new_link_frame_off_projected, new_link_frame_rot, WORLD, "X" + id)
                       
@@ -1066,6 +1069,9 @@ class Converter:
                        jtype = "revolute";
 
 
+        # add axis: the axis is expressed in the axisReferenceFrame (normally WORLD)
+        #           while in the URDF we have to express it in the child frame
+        #           we have then to properly rotate it. 
         if 'axis' in jointdict and jtype != 'fixed':
             axis_string = jointdict['axis'].replace(',', ' ')
 
@@ -1075,6 +1081,17 @@ class Converter:
             if( id in self.reverseRotationAxis ):
                 for i in range(0,3):
                     axis[i] = -axis[i]
+
+            axis_np = numpy.array(axis)
+
+ 
+            child_H_axisReferenceFrame = self.tfman.getHomTransform("X"+cid,jointdict['axisReferenceFrame']);
+
+            axis_child = numpy.dot(child_H_axisReferenceFrame[0:3,0:3],axis_np);
+
+            for i in range(0,3):
+                axis[i] = axis_child[i];
+
 
         # Define the origin
         (off, rot) = self.tfman.get("X" + pid, "X" + cid)
