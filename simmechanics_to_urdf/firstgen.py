@@ -216,9 +216,12 @@ class Converter:
 
     def addXMLBlobs(self):
         for blob in self.XMLBlobs:
-            # sys.stderr.write("Found blob: " + str(blob)+"\n");
-            blob_el = lxml.etree.fromstring(blob);
-            self.urdf_xml.append(blob_el);
+            if not( blob is None or blob is ''):
+                blob_el = lxml.etree.fromstring(blob);
+                self.urdf_xml.append(blob_el);
+            else
+                sys.stderr.write("Warning: malformed XMLBlob: " + blob + "\n")
+                sys.stderr.write("Ingnoring it")
 
     def parseYAMLConfig(self, configFile):
         """Parse the YAML configuration File, if it exists.
@@ -541,7 +544,7 @@ class Converter:
 
             # Default to continuous joints
             joint['type'] = jdict.get('type', 'continuous')
-
+            
             if 'axis' in jdict:
                 #print("axis" + str(jdict['axis']))
                 joint['axis'] = jdict['axis']
@@ -1041,13 +1044,12 @@ class Converter:
                 setattr(limits, k, v)
             if( jtype == "continuous" ):
                 jtype = "revolute";
-
         else:
-           #if present, load limits from csv joint configuration file
-           #note: angle in csv joints configuration file angles are represented as DEGREES
-           if( id in self.joint_configuration ):
-               conf = self.joint_configuration[id]
-               if( ("upper_limit" in conf) or
+            #if present, load limits from csv joint configuration file
+            #note: angle in csv joints configuration file angles are represented as DEGREES
+            if( id in self.joint_configuration ):
+                conf = self.joint_configuration[id]
+                if( ("upper_limit" in conf) or
                    ("lower_limit" in conf) or
                    ("velocity_limit" in conf) or
                    ("effort_limit" in conf) ):
@@ -1067,6 +1069,18 @@ class Converter:
                    #if adding limits, switching the joint type to revolute
                    if( jtype == "continuous" ):
                        jtype = "revolute";
+            else:
+                # if not limits are defined for a prismatic joint, define them
+                if( jtype == "prismatic" ):
+                    limits = urdf_parser_py.urdf.JointLimit()
+                    limits.upper    = 10000
+                    limits.lower    = -10000
+                    limits.velocity = 10000
+                    limits.effort   = 10000
+
+           
+                       
+        
 
 
         # add axis: the axis is expressed in the axisReferenceFrame (normally WORLD)
