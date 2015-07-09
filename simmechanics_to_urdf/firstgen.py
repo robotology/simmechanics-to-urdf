@@ -219,7 +219,7 @@ class Converter:
             if not( blob is None or blob is ''):
                 blob_el = lxml.etree.fromstring(blob);
                 self.urdf_xml.append(blob_el);
-            else
+            else:
                 sys.stderr.write("Warning: malformed XMLBlob: " + blob + "\n")
                 sys.stderr.write("Ingnoring it")
 
