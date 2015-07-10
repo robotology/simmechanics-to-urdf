@@ -806,7 +806,8 @@ class Converter:
         if linkdict['name'] == "RootPart":
             return
 
-        if( 'geometryFileName' in linkdict.keys() and 'mass' in linkdict.keys() ) :
+
+        if( 'geometryFileName' in linkdict.keys() ) :
             ##############################################################
             ### Define Geometry (if this is not a fake link, i.e. a frame)
             ##############################################################
@@ -847,10 +848,16 @@ class Converter:
             if not cname in self.usedcolors:
                 visual.material.color = urdf_parser_py.urdf.Color(r,g,b,a)
                 self.usedcolors[cname] = True
+                
+        else:
+            visual = None
+            collision = None
 
             ##############################################################
             ### Define Inertial Frame and inertia informations (if this is not a fake link, i.e. a frame)
             ##############################################################
+        if( 'mass' in linkdict.keys() ) :
+
             inertial = urdf_parser_py.urdf.Inertial()
 
             if( id not in self.mirroredInertiaMap ): 
@@ -993,11 +1000,11 @@ class Converter:
 
                 # Save also Inertial frame in tfman for consistency
                 self.tfman.add(zero(off), rot,"X"+mirroredLink,mirroredLink+"CG")
-
-            ### add the link
-            link = urdf_parser_py.urdf.Link(id, visual, inertial, collision)
         else:
-            link = urdf_parser_py.urdf.Link(id)
+                inertial = None
+
+        ### add the link
+        link = urdf_parser_py.urdf.Link(id, visual, inertial, collision)
 
 
         self.result.add_link(link)
