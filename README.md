@@ -23,6 +23,15 @@ Based on the [original version](http://wiki.ros.org/simmechanics_to_urdf) by [Da
 This conversion script uses Python, so you have to install Python for Windows:
 https://www.python.org/downloads/windows/ .
 
+#### OS X 
+##### Install dependencies 
+To install the dependencies, a easy way is to have installed `pip`, that is installed 
+if you use the python version provided by homebrew. 
+If you have `pip` installed you can get all necessary dependencies with:
+~~~
+pip install lxml numpy pyyaml 
+~~~
+
 #### Debian/Ubuntu
 ##### Install dependencies
 Install the necessary dependencies with apt-get:
