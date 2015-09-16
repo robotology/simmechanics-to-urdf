@@ -298,7 +298,7 @@ class Converter:
                     exported_frame["exportedFrameName"] = imuSens["sensorName"];
 
                 if( imuSens.get("frameReferenceLink") is not None ):
-                    exported_frame["frameReferenceLink"] = imusens["frameReferenceLink"];
+                    exported_frame["frameReferenceLink"] = imuSens["frameReferenceLink"];
                 else:
                     exported_frame["frameReferenceLink"] = imuSens["linkName"];
 
@@ -699,9 +699,9 @@ class Converter:
             if( jointIsNotFixed and not (parentid == "GROUND")  ): 
                 if( self.linkFramesMap.get(link['uid']) is None ):
                     # no frame redefinition 
-               	    (off1, rot1) = self.tfman.get(WORLD, ref)
-            	    (off2, rot2) = self.tfman.get(WORLD, id + "CS1")
-            	    self.tfman.add(off1, rot2, WORLD, "X" + id)
+                    (off1, rot1) = self.tfman.get(WORLD, ref)
+                    (off2, rot2) = self.tfman.get(WORLD, id + "CS1")
+                    self.tfman.add(off1, rot2, WORLD, "X" + id)
                 else: 
                     # using a useradded frame
                     new_link_frame_fid = self.linkNameDisplayName2fid[ (self.linkFramesMap[link['uid']]["frameReferenceLink"],self.linkFramesMap[link['uid']]["frameName"])];
@@ -721,7 +721,7 @@ class Converter:
                     # Projection math: project the frame origin on the joint axis
                     new_link_frame_off_projected = numpy.dot(new_link_frame_off_np-joint_offset_np,axis_normalized)*axis_normalized+joint_offset_np;
 
-            	    self.tfman.add(new_link_frame_off_projected, new_link_frame_rot, WORLD, "X" + id)
+                    self.tfman.add(new_link_frame_off_projected, new_link_frame_rot, WORLD, "X" + id)
                       
             else:
                 # If the parent joint is fixed, the URDF format does not 
@@ -742,8 +742,8 @@ class Converter:
                     if( parentid == "GROUND" ):
                         #be consistent with the old behaviour
                         (off1, rot1) = self.tfman.get(WORLD, ref)
-            	        (off2, rot2) = self.tfman.get(WORLD, id + "CS1")
-            	        self.tfman.add(off1, rot2, WORLD, "X" + id)
+                        (off2, rot2) = self.tfman.get(WORLD, id + "CS1")
+                        self.tfman.add(off1, rot2, WORLD, "X" + id)
                     else:
                         # If nothing special happens, use CS1 as link frame
                         (off, rot) = self.tfman.get(WORLD, id + "CS1")
