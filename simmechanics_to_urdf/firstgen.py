@@ -126,6 +126,7 @@ class Converter:
         self.usedcolors = {}
         self.ref2nameMap = {}
         self.realRootLink = None
+        self.outputString = "".encode('UTF-8')
         # map mapping USERADDED linkName+displayName to fid of the frame
         self.linkNameDisplayName2fid = {}
 
@@ -135,7 +136,7 @@ class Converter:
         # Extra Transforms for Debugging
         self.tfman.add([0,0,0], [0.70682518,0,0,0.70682518], "ROOT", WORLD) # rotate so Z axis is up
 
-    def convert(self, filename, yaml_configfile, csv_configfile, mode):
+    def convert(self, filename, yaml_configfile, csv_configfile, mode, outputfile_name):
         self.mode = mode
 
         # Parse the global YAML configuration file
@@ -157,12 +158,22 @@ class Converter:
             self.generateXML()
             self.addSensors()
             self.addXMLBlobs()
-            print(lxml.etree.tostring(self.urdf_xml,pretty_print=True))
+            self.outputString = lxml.etree.tostring(self.urdf_xml,pretty_print=True)
+            
         if mode == "graph":
-            print(self.graph())
+            self.outputString = self.graph().encode('UTF-8')
+
         if mode == "debug":
             self.debugPrints()
-
+            
+        # save the output to file or print in the terminal    
+        if (outputfile_name is not None):
+            f = open(outputfile_name, 'wb')
+            f.write(self.outputString)
+            f.close()
+        else:
+            print(self.outputString)
+        
     def debugPrints(self):
         print("root_link_T_l_foot_CG :\n " + str(self.tfman.getHomTransform("X"+"root_link","l_foot"+"CG")[:3,3])); 
         print("root_link_T_r_foot_CG :\n " + str(self.tfman.getHomTransform("X"+"root_link","r_foot"+"CG")[:3,3])); 
@@ -1475,6 +1486,7 @@ def main():
     parser.add_argument('--csv-joints', dest='csv_joints_config', nargs='?', action='store', help='CSV joints configuration file (for options of single joints)')
     parser.add_argument('--yaml', dest='yaml_config', nargs='?', action='store', help='YAML configuration file (for global options)')    
     parser.add_argument('--output', dest='mode', nargs='?', action='store', default='xml', help='output mode, possible options are xml (URDF output, default), graph (DOT output) or none')
+    parser.add_argument('--outputfile', dest='outputfile_name', nargs='?', action='store', help='output file, use to save the output to a file (if not given the output is printed in the terminal)')
 
     '''
     argc = len(sys.argv)
@@ -1492,7 +1504,7 @@ def main():
     args = parser.parse_args()
 
     con = Converter()
-    con.convert(args.filename, args.yaml_config, args.csv_joints_config, args.mode)
+    con.convert(args.filename, args.yaml_config, args.csv_joints_config, args.mode, args.outputfile_name)
 
 
 
