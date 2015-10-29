@@ -331,6 +331,9 @@ class Converter:
         self.velocity_limit_fallback = configuration.get('velocity_limit',50000)
                      
         self.rename = configuration.get('rename',{})
+        
+        # Get map of links for which we explicitly assign the mass
+        self.assignedMasses = configuration.get('assignedMasses',{})
 
         # Get lists converted to strings
         self.removeList = configuration.get('remove', {})
@@ -876,7 +879,21 @@ class Converter:
                 units = linkdict['massUnits']
                 massval = convert(float(linkdict['mass']), units)
                 inertial.mass = massval
-
+                
+                # we check if a mass different from the one present in 
+                # the SimMechanics file is assigned for this link in the 
+                # yaml file 
+                inertiaScaling = 1.0;
+                
+                if( id in self.assignedMasses ):
+                    # if it is, we have to change the mass and scale 
+                    # the inertia by multiplyng by new_mass/old_mass
+                    # (the COM instead don't need any modification)
+                    oldMass = inertial.mass;
+                    newMass = self.assignedMasses[id];
+                    inertial.mass = newMass;
+                    inertiaScaling = newMass/oldMass;
+                    
                 matrix = getlist(linkdict["inertia"])
 
                 units = linkdict['inertiaUnits']
@@ -885,12 +902,12 @@ class Converter:
                     matrix[i] = convert(matrix[i], units)
 
                 inertial.inertia = urdf_parser_py.urdf.Inertia()
-                inertial.inertia.ixx = matrix[0]
-                inertial.inertia.ixy = matrix[1]
-                inertial.inertia.ixz = matrix[2]
-                inertial.inertia.iyy = matrix[4]
-                inertial.inertia.iyz = matrix[5]
-                inertial.inertia.izz = matrix[8]
+                inertial.inertia.ixx = inertiaScaling*matrix[0]
+                inertial.inertia.ixy = inertiaScaling*matrix[1]
+                inertial.inertia.ixz = inertiaScaling*matrix[2]
+                inertial.inertia.iyy = inertiaScaling*matrix[4]
+                inertial.inertia.iyz = inertiaScaling*matrix[5]
+                inertial.inertia.izz = inertiaScaling*matrix[8]
 
                 # Inertial origin is the center of gravity
                 (off, rot) = self.tfman.get("X" + id, id+"CG")

@@ -128,8 +128,16 @@ The parameter accepted by the script are documented in the following.
 | `scale` | String |  None | If this parameter is defined, the scale attribute of the mesh in the URDF will be set to its value. Example: "0.01 0.01 0.01" - if your meshes were saved using centimeters as units instead of meters.  |
 
 
+##### Inertia parameters
+Parameters related to the inertia parameters of a link
+| Attribute name | Type | Default Value | Description | 
+|:----------------:|:---------:|:------------:|:-------------:|
+| `assignedMasses` | Map  | {} (Empty Map) | If a link is in this map, the mass found in the SimMechanics file is substituted with the one passed through this map. Furthermore, the inertia matrix present in the SimMechanics file is scaled accounting for the new mass (i.e. multiplied by new_mass/old_mass) |
+
+
 ##### Sensors Parameters
 Sensor information can be expressed using arrays of sensor options:
+
 
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
