@@ -130,9 +130,10 @@ The parameter accepted by the script are documented in the following.
 
 ##### Inertia parameters
 Parameters related to the inertia parameters of a link
+
 | Attribute name | Type | Default Value | Description | 
 |:----------------:|:---------:|:------------:|:-------------:|
-| `assignedMasses` | Map  | {} (Empty Map) | If a link is in this map, the mass found in the SimMechanics file is substituted with the one passed through this map. Furthermore, the inertia matrix present in the SimMechanics file is scaled accounting for the new mass (i.e. multiplied by new_mass/old_mass) |
+| `assignedMasses` | Map  | {} (Empty Map) |   If a link is in this map, the mass found in the SimMechanics file is substituted with the one passed through this map. Furthermore, the inertia matrix present in the SimMechanics file is scaled accounting for the new mass (i.e. multiplied by new_mass/old_mass)        |
 
 
 ##### Sensors Parameters
