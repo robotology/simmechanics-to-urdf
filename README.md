@@ -106,8 +106,8 @@ The parameter accepted by the script are documented in the following.
 ###### Link Frames Parameters  (keys of elements of `linkFrames`)
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:-----------:|:-------------:|
-| `linkName`       | String |  Mandatory  | name of the link for which we  | 
-| `frameName`      | String | Mandatory  | 
+| `linkName`       | String |  Mandatory  | name of the link for which we want to set the frame | 
+| `frameName`      | String | Mandatory  | `displayName` of the frame that we want to use as link frame. This frame should be attached to the `frameReferenceLink` link. The default value for `frameReferenceLink` is `linkName` | 
 | `frameReferenceLink`  | String  |  empty      | `frameReferenceLink` at which the frame is attached. If `frameReferenceLink` is empty, it will default to `linkName` |
 
 
