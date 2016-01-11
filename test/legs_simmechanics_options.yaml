@@ -111,11 +111,17 @@ forceTorqueSensors:
   - jointName: r_foot_ft_sensor
     directionChildToParent: Yes
 
-IMUs:
+sensors:
   - linkName: chest
     frameName: SCSYS_MTX_ACCEL
     sensorName: "imu_frame"
     exportFrameInURDF: Yes
+    sensorType: "imu"
+    updateRate: 100
+    sensorBlob: |
+                <plugin name='iCub_yarp_gazebo_plugin_IMU' filename='libgazebo_yarp_imu.so'>
+                        <yarpConfigurationFile>model://iCubGenova02/conf/inertial.ini</yarpConfigurationFile>
+                    </plugin>
 
 # Workaround options 
 mirroredInertia:

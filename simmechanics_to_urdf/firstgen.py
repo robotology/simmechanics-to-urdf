@@ -26,6 +26,10 @@ COLORS =[("green", (0, 1, 0, 1)), ("black", (0, 0, 0, 1)), ("red", (1, 0, 0, 1))
      ("blue", (0, 0, 1, 1)), ("yellow", (1, 1, 0, 1)), ("pink", (1, 0, 1, 1)),
      ("cyan", (0, 1, 1, 1)), ("green", (0, 1, 0, 1)), ("white", (1, 1, 1, 1)),
      ("dblue", (0, 0, .8, 1)), ("dgreen", (.1, .8, .1, 1)), ("gray", (.5, .5, .5, 1))]
+     
+# List of supported sensor types
+SENSOR_TYPES = ["altimeter", "camera", "contact", "gps", "imu", "logical_camera",
+                "magnetometer", "ray", "sonar", "transceiver", "multicamera"]
 
 # epsilon for testing whether a number is close to zero
 _EPS = numpy.finfo(float).eps * 4.0
@@ -127,6 +131,7 @@ class Converter:
         self.ref2nameMap = {}
         self.realRootLink = None
         self.outputString = "".encode('UTF-8')
+        self.sensorIsValid = False
         # map mapping USERADDED linkName+displayName to fid of the frame
         self.linkNameDisplayName2fid = {}
 
@@ -180,6 +185,10 @@ class Converter:
 
     def generateXML(self):
         self.urdf_xml = self.result.to_xml();
+        
+    def addXMLBlobs(self):
+        for blob in self.XMLBlobs:
+            addXMLBlob(blob, self.urdf_xml)
 
     def addSensors(self):
         generator = URDFGazeboSensorsGenerator();
@@ -193,12 +202,17 @@ class Converter:
             ft_el = generator.getURDFForceTorque(referenceJoint,sensorName,ftSens["directionChildToParent"])
             self.urdf_xml.append(ft_el);
         
-        # for the IMU, we rely on pose given by a USERADDED frame 
-        for imuSens in self.IMUs: 
-            sensorLink = imuSens["linkName"]; 
-            frameName = imuSens.get("frameName");
-            referenceLink = imuSens.get("frameReferenceLink"); 
-            sensorName    = imuSens.get("sensorName");
+        # for the other sensors, we rely on pose given by a USERADDED frame 
+        for sensor in self.sensors: 
+            sensorLink = sensor["linkName"]; 
+            frameName = sensor.get("frameName");
+            referenceLink = sensor.get("frameReferenceLink"); 
+            sensorName    = sensor.get("sensorName");
+            sensorType = sensor.get("sensorType");
+            updateRate = sensor.get("updateRate");
+            sensorBlob = sensor.get("sensorBlob");
+            
+            self.isValidSensor(sensorType);
 
             if( frameName is None ):
                 # If frame is not specified, the sensor frame is the link frame 
@@ -221,18 +235,9 @@ class Converter:
 
             #sys.stderr.write("Processing link " + link['uid'] + "\n")
 
-            imu_el =  generator.getURDFIMU(sensorLink,sensorName,pose)
+            sensor_el =  generator.getURDFSensor(sensorLink, sensorType, sensorName, pose, updateRate, sensorBlob)
  
-            self.urdf_xml.append(imu_el);
-
-    def addXMLBlobs(self):
-        for blob in self.XMLBlobs:
-            if not( blob is None or blob is ''):
-                blob_el = lxml.etree.fromstring(blob);
-                self.urdf_xml.append(blob_el);
-            else:
-                sys.stderr.write("Warning: malformed XMLBlob: " + blob + "\n")
-                sys.stderr.write("Ingnoring it")
+            self.urdf_xml.append(sensor_el);
 
     def parseYAMLConfig(self, configFile):
         """Parse the YAML configuration File, if it exists.
@@ -279,7 +284,7 @@ class Converter:
 
         # Get a list of sensors 
         self.forceTorqueSensors = configuration.get('forceTorqueSensors',{});
-        self.IMUs = configuration.get('IMUs',{});
+        self.sensors = configuration.get('sensors',{});
 
         # Load the exported frames 
         exportedFrames = configuration.get('exportedFrames',[])
@@ -299,19 +304,19 @@ class Converter:
         #        exported_frame["frameName"]
             
  
-        for imuSens in self.IMUs:
-            if( imuSens["exportFrameInURDF"] ): 
+        for sensor in self.sensors:
+            if( sensor["exportFrameInURDF"] ): 
                 exported_frame = {}
-                exported_frame["frameName"] = imuSens["frameName"] 
-                if( imuSens.get("exportedFrameName") is not None ): 
-                    exported_frame["exportedFrameName"] = imuSens["exportedFrameName"];
+                exported_frame["frameName"] = sensor["frameName"] 
+                if( sensor.get("exportedFrameName") is not None ): 
+                    exported_frame["exportedFrameName"] = sensor["exportedFrameName"];
                 else:
-                    exported_frame["exportedFrameName"] = imuSens["sensorName"];
+                    exported_frame["exportedFrameName"] = sensor["sensorName"];
 
-                if( imuSens.get("frameReferenceLink") is not None ):
-                    exported_frame["frameReferenceLink"] = imuSens["frameReferenceLink"];
+                if( sensor.get("frameReferenceLink") is not None ):
+                    exported_frame["frameReferenceLink"] = sensor["frameReferenceLink"];
                 else:
-                    exported_frame["frameReferenceLink"] = imuSens["linkName"];
+                    exported_frame["frameReferenceLink"] = sensor["linkName"];
 
                 self.exportedFramesMap[(exported_frame["frameReferenceLink"],exported_frame["frameName"])] = exported_frame; 
             
@@ -812,6 +817,14 @@ class Converter:
             return False;
         
         return True;
+        
+    def isValidSensor(self, sensorType):
+        """ Checks if the specified sensor type is supported """
+        
+        for supportedSensorType in SENSOR_TYPES:
+            self.sensorIsValid = self.sensorIsValid or supportedSensorType == sensorType
+        if not self.sensorIsValid:
+            raise TypeError('The sensor type ', sensorType, 'specified in the *.yaml file, is not supported.')
 
     def outputLink(self, id):
         """ Creates the URDF output for a single link """
@@ -1258,6 +1271,14 @@ class Converter:
                 ngid = jid
 
             self.makeGroup(child, ngid)
+                
+def addXMLBlob(blob, parentXML):
+    if not( blob is None or blob is ''):
+        blob_el = lxml.etree.fromstring(blob);
+        parentXML.append(blob_el);
+    else:
+        sys.stderr.write("Warning: malformed or not specified XMLBlob for: " + parentXML.get("name") + "\n")
+        sys.stderr.write("Ingnoring it" + "\n")
 
 def quaternion_matrix(quaternion):
     """Return homogeneous rotation matrix from quaternion.
@@ -1481,7 +1502,7 @@ class URDFGazeboSensorsGenerator:
 
        return gazebo_el;
 
-   def getURDFIMU(self, linkName, sensorName, pose, updateRate=100):
+   def getURDFSensor(self, linkName, sensorType, sensorName, pose, updateRate, sensorBlob):
        #sys.stderr.write("Link name is " + str(linkName) + "\n");
        gazebo_el = lxml.etree.Element("gazebo" , reference=linkName)
        sensor_el = lxml.etree.SubElement(gazebo_el,"sensor")
@@ -1490,9 +1511,11 @@ class URDFGazeboSensorsGenerator:
        always_on_el.text = str(1);
        update_rate_el = lxml.etree.SubElement(sensor_el,"update_rate")
        update_rate_el.text = str(updateRate);
-       sensor_el.set("type","imu");
+       sensor_el.set("type", sensorType);
        pose_el = lxml.etree.SubElement(sensor_el,"pose"); 
        pose_el.text = pose;
+       
+       addXMLBlob(sensorBlob, sensor_el)
 
        return gazebo_el;
 
