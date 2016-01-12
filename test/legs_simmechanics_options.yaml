@@ -118,10 +118,11 @@ sensors:
     exportFrameInURDF: Yes
     sensorType: "imu"
     updateRate: 100
-    sensorBlob: |
-                <plugin name='iCub_yarp_gazebo_plugin_IMU' filename='libgazebo_yarp_imu.so'>
-                        <yarpConfigurationFile>model://iCubGenova02/conf/inertial.ini</yarpConfigurationFile>
-                    </plugin>
+    sensorBlobs: 
+    - |
+        <plugin name='iCub_yarp_gazebo_plugin_IMU' filename='libgazebo_yarp_imu.so'>
+            <yarpConfigurationFile>model://iCubGenova02/conf/inertial.ini</yarpConfigurationFile>
+        </plugin>
 
 # Workaround options 
 mirroredInertia:

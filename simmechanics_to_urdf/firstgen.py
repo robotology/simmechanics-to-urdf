@@ -162,7 +162,7 @@ class Converter:
             #print("URDF model to print : \n " + str(self.result) + "\n" )
             self.generateXML()
             self.addSensors()
-            self.addXMLBlobs()
+            addXMLBlobs(self.XMLBlobs, self.urdf_xml)
             self.outputString = lxml.etree.tostring(self.urdf_xml,pretty_print=True)
             
         if mode == "graph":
@@ -185,10 +185,6 @@ class Converter:
 
     def generateXML(self):
         self.urdf_xml = self.result.to_xml();
-        
-    def addXMLBlobs(self):
-        for blob in self.XMLBlobs:
-            addXMLBlob(blob, self.urdf_xml)
 
     def addSensors(self):
         generator = URDFGazeboSensorsGenerator();
@@ -210,7 +206,7 @@ class Converter:
             sensorName    = sensor.get("sensorName");
             sensorType = sensor.get("sensorType");
             updateRate = sensor.get("updateRate");
-            sensorBlob = sensor.get("sensorBlob");
+            sensorBlobs = sensor.get("sensorBlobs");
             
             self.isValidSensor(sensorType);
 
@@ -235,7 +231,7 @@ class Converter:
 
             #sys.stderr.write("Processing link " + link['uid'] + "\n")
 
-            sensor_el =  generator.getURDFSensor(sensorLink, sensorType, sensorName, pose, updateRate, sensorBlob)
+            sensor_el =  generator.getURDFSensor(sensorLink, sensorType, sensorName, pose, updateRate, sensorBlobs)
  
             self.urdf_xml.append(sensor_el);
 
@@ -1271,13 +1267,15 @@ class Converter:
 
             self.makeGroup(child, ngid)
                 
-def addXMLBlob(blob, parentXML):
-    if not( blob is None or blob is ''):
-        blob_el = lxml.etree.fromstring(blob);
-        parentXML.append(blob_el);
-    else:
-        sys.stderr.write("Warning: malformed or not specified XMLBlob for: " + parentXML.get("name") + "\n")
-        sys.stderr.write("Ingnoring it" + "\n")
+def addXMLBlobs(blobs, parentXML):
+    if not(blobs is None):
+        for blob in blobs:
+            if not( blob is None or blob is ''):
+                blob_el = lxml.etree.fromstring(blob);
+                parentXML.append(blob_el);
+            else:
+                sys.stderr.write("Warning: malformed XMLBlob for: " + parentXML.get("name") + "\n")
+                sys.stderr.write("Ingnoring it" + "\n")
 
 def quaternion_matrix(quaternion):
     """Return homogeneous rotation matrix from quaternion.
@@ -1501,7 +1499,7 @@ class URDFGazeboSensorsGenerator:
 
        return gazebo_el;
 
-   def getURDFSensor(self, linkName, sensorType, sensorName, pose, updateRate, sensorBlob):
+   def getURDFSensor(self, linkName, sensorType, sensorName, pose, updateRate, sensorBlobs):
        #sys.stderr.write("Link name is " + str(linkName) + "\n");
        gazebo_el = lxml.etree.Element("gazebo" , reference=linkName)
        sensor_el = lxml.etree.SubElement(gazebo_el,"sensor")
@@ -1514,7 +1512,7 @@ class URDFGazeboSensorsGenerator:
        pose_el = lxml.etree.SubElement(sensor_el,"pose"); 
        pose_el.text = pose;
        
-       addXMLBlob(sensorBlob, sensor_el)
+       addXMLBlobs(sensorBlobs, sensor_el)
 
        return gazebo_el;
 
@@ -1549,4 +1547,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-
