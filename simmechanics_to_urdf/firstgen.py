@@ -821,8 +821,7 @@ class Converter:
     def isValidSensor(self, sensorType):
         """ Checks if the specified sensor type is supported """
         
-        for supportedSensorType in SENSOR_TYPES:
-            self.sensorIsValid = self.sensorIsValid or supportedSensorType == sensorType
+        self.sensorIsValid = sensorType in SENSOR_TYPES 
         if not self.sensorIsValid:
             raise TypeError('The sensor type ', sensorType, 'specified in the *.yaml file, is not supported.')
 
