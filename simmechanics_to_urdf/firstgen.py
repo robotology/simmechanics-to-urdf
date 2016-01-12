@@ -28,8 +28,8 @@ COLORS =[("green", (0, 1, 0, 1)), ("black", (0, 0, 0, 1)), ("red", (1, 0, 0, 1))
      ("dblue", (0, 0, .8, 1)), ("dgreen", (.1, .8, .1, 1)), ("gray", (.5, .5, .5, 1))]
      
 # List of supported sensor types
-SENSOR_TYPES = ["altimeter", "camera", "contact", "gps", "imu", "logical_camera",
-                "magnetometer", "ray", "sonar", "transceiver", "multicamera"]
+SENSOR_TYPES = ["altimeter", "camera", "contact", "depth", "gps", "gpu_ray", "imu", "logical_camera",
+                "magnetometer", "multicamera", "ray", "rfid", "rfidtag", "sonar", "wireless_receiver", "wireless_transmitter"]
 
 # epsilon for testing whether a number is close to zero
 _EPS = numpy.finfo(float).eps * 4.0
