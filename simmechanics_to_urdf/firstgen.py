@@ -335,6 +335,13 @@ class Converter:
         
         # Get map of links for which we explicitly assign the mass
         self.assignedMasses = configuration.get('assignedMasses',{})
+        
+        # Get map of links for which we explicitly assign the mass 
+        self.assignedInertiasMap = {}
+        assignedInertiasVector = configuration.get('assignedInertias',{})
+        for el in assignedInertiasVector:
+            link = el["linkName"]
+            self.assignedInertiasMap[link] = el;
 
         # Get lists converted to strings
         self.removeList = configuration.get('remove', {})
@@ -783,6 +790,20 @@ class Converter:
             self.outputLink(cid)
             self.outputJoint(jid, id)
             self.processLink(cid)
+            
+    def isValidURDFInertia(self, inertia, tol):
+        inertiaMatrix = numpy.zeros([3,3]);
+        inertiaMatrix[0,0] = inertia.ixx;
+        inertiaMatrix[0,1] = inertia.ixy;
+        inertiaMatrix[0,2] = inertia.ixz;
+        inertiaMatrix[1,0] = inertia.ixy;
+        inertiaMatrix[1,1] = inertia.iyy;
+        inertiaMatrix[1,2] = inertia.iyz;
+        inertiaMatrix[2,0] = inertia.ixz;
+        inertiaMatrix[2,1] = inertia.iyz;
+        inertiaMatrix[2,2] = inertia.izz;
+        
+        return self.isValidInertiaMatrix(inertiaMatrix, tol);
 
     def isValidInertiaMatrix(self, inertia, tol):
         """Check that a matrix is a valid inertia matrix: 
@@ -794,7 +815,7 @@ class Converter:
         if( abs((inertia[0,1]-inertia[1,0])/deter) > tol or 
             abs((inertia[0,2]-inertia[2,0])/deter) > tol or 
             abs((inertia[1,2]-inertia[2,1])/deter) > tol ):
-            sys.stderr.write("Inertia: " + str(inertia) + " is not a valid Inertia matrix\n");
+            sys.stderr.write("Inertia: " + str(inertia) + " is not a valid Inertia matrix because it is not simmetric.\n");
             return False;
 
         # Compute eigenvalues 
@@ -802,14 +823,14 @@ class Converter:
         if( (s[0])/deter < tol or 
             (s[1])/deter < tol or 
             (s[2])/deter < tol ):
-            sys.stderr.write("Inertia: " + str(inertia) + " is not a valid Inertia matrix\n");
+            sys.stderr.write("Inertia: " + str(inertia) + " is not a valid Inertia matrix because it has negative inertias on the principal axis.\n");
             return False;
  
         # Check triangle inequality 
         if( ((s[0]+s[1]-s[2])/deter < tol) or 
             ((s[1]+s[2]-s[0])/deter < tol) or
             ((s[0]+s[2]-s[1])/deter < tol) ):
-            sys.stderr.write("Inertia: " + str(inertia) + " is not a valid Inertia matrix\n");
+            sys.stderr.write("Inertia: " + str(inertia) + " is not a valid Inertia matrix because it does not respect the triangle inequality.\n");
             return False;
         
         return True;
@@ -916,6 +937,21 @@ class Converter:
                 inertial.inertia.iyy = inertiaScaling*matrix[4]
                 inertial.inertia.iyz = inertiaScaling*matrix[5]
                 inertial.inertia.izz = inertiaScaling*matrix[8]
+                
+                if( id in self.assignedInertiasMap ):
+                    # depending on the assigned inertia, we have to modify
+                    # some values of the inertia matrix. We will check the 
+                    # resulting inertia to make sure that the inertia matrix
+                    # is still physically consistent
+                    if( 'xx' in self.assignedInertiasMap[id] ):
+                        inertial.inertia.ixx = self.assignedInertiasMap[id]['xx']
+                    if( 'yy' in self.assignedInertiasMap[id] ):
+                        inertial.inertia.ixx = self.assignedInertiasMap[id]['yy']
+                    if( 'zz' in self.assignedInertiasMap[id] ):
+                        inertial.inertia.ixx = self.assignedInertiasMap[id]['zz']
+                        
+                    if( not self.isValidURDFInertia(inertial.inertia,1e-3) ):
+                        sys.stderr.write("Warning: inertia matrix for link " + id + " is not physically consistent.\n");
 
                 # Inertial origin is the center of gravity
                 (off, rot) = self.tfman.get("X" + id, id+"CG")

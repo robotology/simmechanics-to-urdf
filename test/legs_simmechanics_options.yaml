@@ -165,6 +165,19 @@ reverseRotationAxis:
   l_ankle_roll
   r_hip_pitch
   r_ankle_roll
+  
+
+assignedMasses: 
+  l_foot: 1
+  r_foot: 3
+
+assignedInertias: 
+  - linkName: l_foot
+    xx: 0.0001
+  - linkName: r_foot
+    xx: 0.0003
+    yy: 0.0003
+    zz: 0.0003
 
 XMLBlobs: 
   - |

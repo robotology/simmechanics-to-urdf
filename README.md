@@ -133,8 +133,30 @@ Parameters related to the inertia parameters of a link
 
 | Attribute name | Type | Default Value | Description | 
 |:----------------:|:---------:|:------------:|:-------------:|
-| `assignedMasses` | Map  | {} (Empty Map) |   If a link is in this map, the mass found in the SimMechanics file is substituted with the one passed through this map. Furthermore, the inertia matrix present in the SimMechanics file is scaled accounting for the new mass (i.e. multiplied by new_mass/old_mass)        |
+| `assignedMasses` | Map  | {} (Empty Map) | If a link is in this map, the mass found in the SimMechanics file is substituted with the one passed through this map. Furthermore, the inertia matrix present in the SimMechanics file is scaled accounting for the new mass (i.e. multiplied by new_mass/old_mass). The mass is expressed in Kg. | 
+| `assignedInertias`    | Array | empty | Structure for redefining the inertia tensor (at the COM) for a given link.  | 
 
+###### Assigned Inertias parameters (elements of `assignedInertias` parameters)
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:-----------:|:-------------:|
+| `linkName`       | String |  Mandatory  | name of the link for which we want to set the frame | 
+| `xx`      | String | empty  | If defined, change the Ixx value of the inertia matrix of the link. Unit of measure: Kg*m^2 . | 
+| `yy`      | String | empty  | If defined, change the Iyy value of the inertia matrix of the link. Unit of measure: Kg*m^2 . | 
+| `zz`      | String | empty  | If defined, change the Izz value of the inertia matrix of the link. Unit of measure: Kg*m^2 . | 
+
+~~~
+assignedMasses: 
+  link1: 1
+  link2: 3
+
+assignedInertias: 
+  - linkName: link1
+    xx: 0.0001
+  - linkName: link1
+    xx: 0.0003
+    yy: 0.0003
+    zz: 0.0003
+~~~
 
 ##### Sensors Parameters
 Sensor information can be expressed using arrays of sensor options:
