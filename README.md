@@ -165,7 +165,7 @@ Sensor information can be expressed using arrays of sensor options:
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
 | `forceTorqueSensors` | Array  |  empty      | Array of option for exporting 6-Axis ForceTorque sensors |
-| `IMUs`            | Array  |  empty      | Array of option for exporting IMU sensors |
+| `sensors`            | Array  |  empty      | Array of option for exporting generic sensors (e.g. camera, depth, imu, ray..) |
 
 ###### ForceTorque Sensors Parameters (keys of elements of `forceTorqueSensors`)
 | Attribute name   | Type   | Default Value | Description  |
@@ -179,15 +179,19 @@ Sensor information can be expressed using arrays of sensor options:
 Note that for now the FT sensors sensor frame is required to be coincident with child link frame, due 
 to URDF limitations. 
 
-###### IMU Sensors Parameters (keys of elements of `IMUs`)
+###### Generic Sensors Parameters (keys of elements of `sensors`)
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
-| `linkName`         | String  |  Mandatory      | Name of the Link at which the IMU is rigidly attached. |
+| `linkName`         | String  |  Mandatory      | Name of the Link at which the sensor is rigidly attached. |
 | `frameName`        | String  |  empty      | `displayName` of the frame in which the sensor measure is expressed. The selected frame must be attached to the `referenceLink` link. If empty the frame used for the sensor is coincident with the link frame. |
 | `frameReferenceLink`    | String  | linkName    | link at which the sensor frame is attached (to make sense, this link should be rigidly attached to the `linkName`. By default `referenceLink` is assumed to be `linkName`.
 | `sensorName`      | String   | LinkName_FrameName | Name of the sensor, to be used in the output URDF file |
 | `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame (as if the sensor frame was added to the `exportedFrames` array) | 
 | `exportedFrameName` | String | sensorName+"_frame" | Name of the URDF link exported by the `exportFrameInURDF` option | 
+| `sensorType` | String | Mandatory | Type of sensor. Supported: "altimeter", "camera", "contact", "depth", "gps", "gpu_ray", "imu", "logical_camera", "magnetometer", "multicamera", "ray", "rfid", "rfidtag", "sonar", "wireless_receiver", "wireless_transmitter" | 
+| `updateRate` | String | Mandatory | Number representing the update rate of the sensor. Expressed in [Hz]. | 
+| `sensorBlobs` | String | empty | Array of strings (possibly on multiple lines) represeting complex XML blobs that will be included as child of the `<sensor>` element | 
+
 
 ##### Mirrored Inertia Parameters 
 SimMechanics Link has some problems dealing with mirrored mechanism, in particularly when dealing with exporting inertia information. For this reason we provide 
