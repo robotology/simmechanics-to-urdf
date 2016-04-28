@@ -8,10 +8,10 @@ before_install:
 # install dependencies available on pip
 - pip install numpy lxml PyYAML --use-mirrors
 # install urdf_parser_py
-- git clone https://github.com/ros/urdfdom
-- cd urdfdom/urdf_parser_py
+- git clone https://github.com/ros/urdf_parser_py
+- cd urdf_parser_py
 - python setup.py install
-- cd ../../
+- cd ../
 
 install:
 - python setup.py install
