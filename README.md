@@ -14,7 +14,7 @@ Based on the [original version](http://wiki.ros.org/simmechanics_to_urdf) by [Da
 - [lxml](http://lxml.de/)
 - [PyYAML](http://pyyaml.org/)
 - [NumPy](http://www.numpy.org/)
-- [urdf_parser_py](https://github.com/ros/urdfdom/tree/master/urdf_parser_py)
+- [urdf_parser_py](https://github.com/ros/urdf_parser_py)
 
 ## Installation
 
@@ -39,10 +39,10 @@ Install the necessary dependencies with apt-get:
 sudo apt-get install python-lxml python-yaml python-numpy
 ~~~
 
-You can install `urdf_parser_py` from the urdfdom git repository:
+You can install `urdf_parser_py` from its git repository:
 ~~~
-git clone https://github.com/ros/urdfdom
-cd urdfdom/urdf_parser_py
+git clone https://github.com/ros/urdf_parser_py
+cd urdf_parser_py
 sudo python setup.py install
 ~~~
 
