@@ -946,9 +946,9 @@ class Converter:
                     if( 'xx' in self.assignedInertiasMap[id] ):
                         inertial.inertia.ixx = self.assignedInertiasMap[id]['xx']
                     if( 'yy' in self.assignedInertiasMap[id] ):
-                        inertial.inertia.ixx = self.assignedInertiasMap[id]['yy']
+                        inertial.inertia.iyy = self.assignedInertiasMap[id]['yy']
                     if( 'zz' in self.assignedInertiasMap[id] ):
-                        inertial.inertia.ixx = self.assignedInertiasMap[id]['zz']
+                        inertial.inertia.izz = self.assignedInertiasMap[id]['zz']
                         
                     if( not self.isValidURDFInertia(inertial.inertia,1e-3) ):
                         sys.stderr.write("Warning: inertia matrix for link " + id + " is not physically consistent.\n");
