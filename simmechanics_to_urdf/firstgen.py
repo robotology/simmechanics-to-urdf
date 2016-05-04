@@ -1161,7 +1161,8 @@ class Converter:
             geometry = urdf_parser_py.urdf.Sphere(radius)
         elif shape == "box":
             size = geometricShape["size"]
-            geometry = urdf_parser_py.urdf.Box(size)
+            sizeVector = [float(size_el) for size_el in size.split()]
+            geometry = urdf_parser_py.urdf.Box(sizeVector)
         elif shape == "cylinder":
             radius = geometricShape["radius"]
             length = geometricShape["length"]
