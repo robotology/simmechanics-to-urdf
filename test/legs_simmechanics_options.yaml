@@ -189,8 +189,9 @@ assignedCollisionGeometry:
       origin: "0.0 0.03 0.0 1.57079632679 0.0 0.0"
   - linkName: l_foot
     geometricShape:
-      shape: box
-      size: 0.16
+      shape: cylinder
+      radius: 0.16
+      length: 0.06
       origin: "0.0 0.0 0.0 0.0 0.0 0.0"
 
 XMLBlobs: 
