@@ -2,6 +2,7 @@
 scale: "0.001 0.001 0.001"
 forcelowercase: Yes
 filenameformatchangeext: "model://iCubHeidelberg01_model/dae_meshes/%s.dae"
+stringToRemoveFromMeshFileName: "_prt"
 
 # Rename options (map Creo names to URDF names)
 rename:
@@ -178,6 +179,19 @@ assignedInertias:
     xx: 0.0003
     yy: 0.0003
     zz: 0.0003
+
+assignedCollisionGeometry: 
+  - linkName: r_foot
+    geometricShape:
+      shape: cylinder
+      radius: 0.16
+      length: 0.06
+      origin: "0.0 0.03 0.0 1.57079632679 0.0 0.0"
+  - linkName: l_foot
+    geometricShape:
+      shape: box
+      size: 0.16
+      origin: "0.0 0.0 0.0 0.0 0.0 0.0"
 
 XMLBlobs: 
   - |
