@@ -1,4 +1,4 @@
-simmechanics-to-urdf [![Build Status](https://travis-ci.org/robotology/simmechanics-to-urdf.svg?branch=master)](https://travis-ci.org/robotology-playground/simmechanics-to-urdf)
+simmechanics-to-urdf [![Build Status](https://travis-ci.org/robotology/simmechanics-to-urdf.svg?branch=master)](https://travis-ci.org/robotology/simmechanics-to-urdf)
 ====================
 
 
