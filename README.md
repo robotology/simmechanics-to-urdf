@@ -197,7 +197,7 @@ to URDF limitations.
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
 | `linkName`       | String |  Mandatory  | Name of the link for which the collision geometry is specified. | 
-| `geometricShape`  | Dictionary  |  Mandatory  | This dictionary contains the parameters used to define the type and the position of the geometric shape. In particular we have: <ul><li>shape: geometric shape type. Supported "box", "cylinder", "sphere". </li><li> type dependent geometric shape parameters. Refer to [SDF Geometry](http://sdformat.org/spec?elem=geometry). </li></ul> origin: String defining the pose of the geometric shape with respect to the `linkFrame`. </li></ul> |
+| `geometricShape`  | Dictionary  |  Mandatory  | This dictionary contains the parameters used to define the type and the position of the geometric shape. In particular we have: <ul><li>shape: geometric shape type. Supported "box", "cylinder", "sphere". </li><li>type dependent geometric shape parameters. Refer to [SDF Geometry](http://sdformat.org/spec?elem=geometry). </li><li>origin: String defining the pose of the geometric shape with respect to the `linkFrame`. </li></ul> |
 
 ~~~
 assignedCollisionGeometry: 
