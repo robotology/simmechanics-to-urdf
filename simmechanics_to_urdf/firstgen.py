@@ -30,6 +30,12 @@ COLORS =[("green", (0, 1, 0, 1)), ("black", (0, 0, 0, 1)), ("red", (1, 0, 0, 1))
 # List of supported sensor types
 SENSOR_TYPES = ["altimeter", "camera", "contact", "depth", "gps", "gpu_ray", "imu", "logical_camera",
                 "magnetometer", "multicamera", "ray", "rfid", "rfidtag", "sonar", "wireless_receiver", "wireless_transmitter"]
+                
+# List of supported geometric shapes and their properties
+GEOMETRIC_SHAPES = {
+    'box': ['origin', 'size'], 
+    'cylinder': ['origin', 'radius', 'length',],
+    'sphere': ['origin', 'radius']}
 
 # epsilon for testing whether a number is close to zero
 _EPS = numpy.finfo(float).eps * 4.0
@@ -248,6 +254,7 @@ class Converter:
 
         self.freezeList = []
         self.redefinedjoints = {}
+        self.assignedCollisionGeometry = {}
 
         self.root = configuration.get('root', None)
         self.extrajoints = configuration.get('extrajoints', {})
@@ -263,6 +270,8 @@ class Converter:
             assert(False)
 
         self.forcelowercase = configuration.get('forcelowercase', True)
+        
+        self.stringToRemoveFromMeshFileName = configuration.get('stringToRemoveFromMeshFileName', False)
 
         ## Frames related options
         
@@ -342,6 +351,12 @@ class Converter:
         for el in assignedInertiasVector:
             link = el["linkName"]
             self.assignedInertiasMap[link] = el;
+            
+        # Get map of links for which we explicitly assign the collision geometry 
+        assignedCollisionGeometryVector = configuration.get('assignedCollisionGeometry',{})
+        for el in assignedCollisionGeometryVector:
+            link = el["linkName"]
+            self.assignedCollisionGeometry[link] = el;
 
         # Get lists converted to strings
         self.removeList = configuration.get('remove', {})
@@ -841,6 +856,30 @@ class Converter:
         self.sensorIsValid = sensorType in SENSOR_TYPES 
         if not self.sensorIsValid:
             raise TypeError('The sensor type ', sensorType, 'specified in the *.yaml file, is not supported.')
+            
+    def isValidGeometricShape(self, geometricShapeData):
+        """ Checks if the specified Geometric shape is supported and correctly defined """
+        
+        geometricShape = geometricShapeData["geometricShape"]
+        shape = geometricShape["shape"]
+        supportedShapes = GEOMETRIC_SHAPES.keys()
+        geometricShapeIsValid = shape in supportedShapes
+        if not geometricShapeIsValid:
+            sys.stderr.write("Shape: '" + shape + "' is not supported.\n");
+            sys.stderr.write("The following shapes are supported: " + ','.join(supportedShapes) + ".\n");
+            return False;
+            
+        geometricShapeIsCorrectlyDefined = True
+        shapeRequiredParameters = GEOMETRIC_SHAPES[shape]
+        for parameter in shapeRequiredParameters: 
+            geometricShapeIsCorrectlyDefined = geometricShapeIsCorrectlyDefined and (parameter in geometricShape.keys())
+        if not geometricShapeIsCorrectlyDefined:
+            sys.stderr.write("The parameters of the shape: '" + shape + "' are not correctly defined.\n");
+            sys.stderr.write("The following parameters are required: " + ','.join(shapeRequiredParameters) + ".\n");
+            return False;
+        
+        return True
+        
 
     def outputLink(self, id):
         """ Creates the URDF output for a single link """
@@ -860,6 +899,9 @@ class Converter:
             filename = linkdict['geometryFileName']
             if self.forcelowercase:
                 filename = filename.lower()
+                
+            if self.stringToRemoveFromMeshFileName:
+                filename = filename.replace(self.stringToRemoveFromMeshFileName,'')
 
             if ( self.filenameformat is not None ):
                 filename = self.filenameformat % filename
@@ -868,13 +910,28 @@ class Converter:
                 filename = self.filenameformatchangeext % filenameNoExt
 
             visual.geometry = urdf_parser_py.urdf.Mesh(filename, self.scale)
-            collision.geometry = visual.geometry
 
             # Visual offset is difference between origin and CS1
             (off, rot) = self.tfman.get("X" + id, id+"CS1")
             rpy = list(euler_from_quaternion(rot))
             visual.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
-            collision.origin = visual.origin
+            
+            if( id in self.assignedCollisionGeometry ):
+                    # in this case the mesh will not be used as the 
+                    # collision geometry. Instead, a simple shape will 
+                    # be used. 
+                    geometricShapeData = self.assignedCollisionGeometry[id]
+                    assert(self.isValidGeometricShape(geometricShapeData))
+                    geometricShape = geometricShapeData["geometricShape"]
+                    collisionOriginVector = [float(scale_el) for scale_el in geometricShape["origin"].split()]
+                    collisionOrigin = urdf_parser_py.urdf.Pose(collisionOriginVector[0:3], collisionOriginVector[3:6])
+                    collisionGeometry = self.createGeometry(geometricShape)
+                    
+                    collision.origin = collisionOrigin
+                    collision.geometry = collisionGeometry
+            else:
+                collision.geometry = visual.geometry
+                collision.origin = visual.origin
 
             # Define Material
             visual.material = urdf_parser_py.urdf.Material()
@@ -1094,6 +1151,24 @@ class Converter:
         self.colormap[s] = color
         self.colorindex = (self.colorindex + 1) % len(COLORS)
         return color
+        
+    def createGeometry(self, geometricShape):
+        """ Gets an object containing the data to build the geometric shape"""
+            
+        shape = geometricShape["shape"]
+        if shape == "sphere":
+            radius = geometricShape["radius"]
+            geometry = urdf_parser_py.urdf.Sphere(radius)
+        elif shape == "box":
+            size = geometricShape["size"]
+            sizeVector = [float(size_el) for size_el in size.split()]
+            geometry = urdf_parser_py.urdf.Box(sizeVector)
+        elif shape == "cylinder":
+            radius = geometricShape["radius"]
+            length = geometricShape["length"]
+            geometry = urdf_parser_py.urdf.Cylinder(radius, length)
+            
+        return geometry
 
     def outputJoint(self, id, parentname):
         """ Outputs URDF for a single joint """
@@ -1133,10 +1208,16 @@ class Converter:
                    ("velocity_limit" in conf) or
                    ("effort_limit" in conf) ):
                    limits = urdf_parser_py.urdf.JointLimit()
-                   if "upper_limit" in conf:
-                       limits.upper = math.radians(float(conf.get("upper_limit")))
-                   if "lower_limit" in conf:
-                       limits.lower = math.radians(float(conf.get("lower_limit")))
+                   if ( "upper_limit" in conf and conf.get("upper_limit") != "" ):
+                       if( jtype == "prismatic" ):
+                           limits.upper = float(conf.get("upper_limit"))
+                       else:
+                           limits.upper = math.radians(float(conf.get("upper_limit")))
+                   if ( "lower_limit" in conf and conf.get("lower_limit") != "" ):
+                       if( jtype == "prismatic" ):
+                           limits.lower = float(conf.get("lower_limit"))
+                       else:
+                           limits.lower = math.radians(float(conf.get("lower_limit")))
                    if "velocity_limit" in conf:
                        limits.velocity = float(conf.get("velocity_limit"))  
                    else:
@@ -1146,10 +1227,13 @@ class Converter:
                    else:
                        limits.effort = self.effort_limit_fallback
                    #if adding limits, switching the joint type to revolute
-                   if( jtype == "continuous" ):
+                   if( jtype == "continuous" and 
+                      conf.get("upper_limit") != "" and 
+                      conf.get("lower_limit") != ""):
                        jtype = "revolute";
             else:
                 # if not limits are defined for a prismatic joint, define them
+                # TODO: can we remove this part?
                 if( jtype == "prismatic" ):
                     limits = urdf_parser_py.urdf.JointLimit()
                     limits.upper    = 10000
@@ -1583,3 +1667,4 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
