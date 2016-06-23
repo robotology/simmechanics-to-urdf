@@ -127,6 +127,28 @@ The parameter accepted by the script are documented in the following.
 | `forcelowercase` |  Boolean | False | Used for translating the filenames. Ff True, it forces all filenames to be lower case. |
 | `scale` | String |  None | If this parameter is defined, the scale attribute of the mesh in the URDF will be set to its value. Example: "0.01 0.01 0.01" - if your meshes were saved using centimeters as units instead of meters.  |
 | `stringToRemoveFromMeshFileName` | String |  None | This parameter allows to specify a string that will be removed from the mesh file names. Example: "_prt"  |
+| `assignedCollisionGeometry` | Array |  None | Structure for redefining the collision geometry for a given link.  |
+
+###### Assigned collision geometries (keys of elements of `assignedCollisionGeometry`)
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:---------:|:------------:|:-------------:|
+| `linkName`       | String |  Mandatory  | Name of the link for which the collision geometry is specified. | 
+| `geometricShape`  | Dictionary  |  Mandatory  | This dictionary contains the parameters used to define the type and the position of the geometric shape. In particular we have: <ul><li>shape: geometric shape type. Supported "box", "cylinder", "sphere". </li><li>type dependent geometric shape parameters. Refer to [SDF Geometry](http://sdformat.org/spec?elem=geometry). </li><li>origin: String defining the pose of the geometric shape with respect to the `linkFrame`. </li></ul> |
+
+~~~
+assignedCollisionGeometry: 
+  - linkName: r_foot
+    geometricShape:
+      shape: cylinder
+      radius: 0.16
+      length: 0.06
+      origin: "0.0 0.03 0.0 1.57079632679 0.0 0.0"
+  - linkName: l_foot
+    geometricShape:
+      shape: box
+      size: 0.4 0.2 0.1
+      origin: "0.0 0.0 0.0 0.0 0.0 0.0"
+~~~
 
 
 ##### Inertia parameters
@@ -192,27 +214,6 @@ to URDF limitations.
 | `sensorType` | String | Mandatory | Type of sensor. Supported: "altimeter", "camera", "contact", "depth", "gps", "gpu_ray", "imu", "logical_camera", "magnetometer", "multicamera", "ray", "rfid", "rfidtag", "sonar", "wireless_receiver", "wireless_transmitter" | 
 | `updateRate` | String | Mandatory | Number representing the update rate of the sensor. Expressed in [Hz]. | 
 | `sensorBlobs` | String | empty | Array of strings (possibly on multiple lines) represeting complex XML blobs that will be included as child of the `<sensor>` element | 
-
-###### Assigned collision geometries (keys of elements of `assignedCollisionGeometry`)
-| Attribute name   | Type   | Default Value | Description  |
-|:----------------:|:---------:|:------------:|:-------------:|
-| `linkName`       | String |  Mandatory  | Name of the link for which the collision geometry is specified. | 
-| `geometricShape`  | Dictionary  |  Mandatory  | This dictionary contains the parameters used to define the type and the position of the geometric shape. In particular we have: <ul><li>shape: geometric shape type. Supported "box", "cylinder", "sphere". </li><li>type dependent geometric shape parameters. Refer to [SDF Geometry](http://sdformat.org/spec?elem=geometry). </li><li>origin: String defining the pose of the geometric shape with respect to the `linkFrame`. </li></ul> |
-
-~~~
-assignedCollisionGeometry: 
-  - linkName: r_foot
-    geometricShape:
-      shape: cylinder
-      radius: 0.16
-      length: 0.06
-      origin: "0.0 0.03 0.0 1.57079632679 0.0 0.0"
-  - linkName: l_foot
-    geometricShape:
-      shape: box
-      size: 0.4 0.2 0.1
-      origin: "0.0 0.0 0.0 0.0 0.0 0.0"
-~~~
 
 ##### Mirrored Inertia Parameters 
 SimMechanics Link has some problems dealing with mirrored mechanism, in particularly when dealing with exporting inertia information. For this reason we provide 
