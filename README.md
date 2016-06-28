@@ -36,7 +36,7 @@ pip install lxml numpy pyyaml
 ##### Install dependencies
 Install the necessary dependencies with apt-get:
 ~~~
-sudo apt-get install python-lxml python-yaml python-numpy
+sudo apt-get install python-lxml python-yaml python-numpy python-setuptools
 ~~~
 
 You can install `urdf_parser_py` from its git repository:
@@ -49,7 +49,7 @@ sudo python setup.py install
 ##### Install simmechanics-to-urdf
 You can then install `simmechanics-to-urdf`:
 ~~~
-git clone https://github.com/robotology-playground/simmechanics-to-urdf
+git clone https://github.com/robotology/simmechanics-to-urdf
 cd simmechanics-to-urdf
 sudo python setup.py install
 ~~~
