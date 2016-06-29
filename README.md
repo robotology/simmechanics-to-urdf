@@ -182,7 +182,11 @@ assignedInertias:
 ~~~
 
 ##### Sensors Parameters
-Sensor information can be expressed using arrays of sensor options:
+Sensor information can be expressed using arrays of sensor options. 
+Note that given that the URDF still does not support an official format for expressing sensor information, 
+this script will output two different elements for each sensor: 
+* a `<gazebo>` element, necessary to simulate the sensor in Gazebo when loading the URDF, as documented in http://gazebosim.org/tutorials?tut=ros_gzplugins . 
+* a more URDF-like `<sensor>` element, in particular the variant supported by the iDynTree library, as documented in https://github.com/robotology/idyntree/blob/master/doc/model_loading.md . 
 
 
 | Attribute name   | Type   | Default Value | Description  |

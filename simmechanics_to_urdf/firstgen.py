@@ -193,7 +193,8 @@ class Converter:
         self.urdf_xml = self.result.to_xml();
 
     def addSensors(self):
-        generator = URDFGazeboSensorsGenerator();
+        generatorGazeboSensors = URDFGazeboSensorsGenerator();
+        generatorURDFSensors   = URDFSensorsGenerator();
         # for the ft sensors, load the sensors as described in the YAML without further check
         for ftSens in self.forceTorqueSensors:
             referenceJoint = ftSens["jointName"];
@@ -201,8 +202,14 @@ class Converter:
                 sensorName = referenceJoint
             else:
                 sensorName = ftSens["sensorName"];
-            ft_el = generator.getURDFForceTorque(referenceJoint,sensorName,ftSens["directionChildToParent"])
-            self.urdf_xml.append(ft_el);
+                
+            # Add sensor in Gazebo format 
+            ft_gazebo_el = generatorGazeboSensors.getURDFForceTorque(referenceJoint,sensorName,ftSens["directionChildToParent"])
+            self.urdf_xml.append(ft_gazebo_el);
+            
+            # Add sensor in URDF format 
+            ft_sensor_el = generatorURDFSensors.getURDFForceTorque(referenceJoint,sensorName,ftSens["directionChildToParent"]);
+            self.urdf_xml.append(ft_sensor_el);
         
         # for the other sensors, we rely on pose given by a USERADDED frame 
         for sensor in self.sensors: 
@@ -232,14 +239,21 @@ class Converter:
             if( sensorName is None): 
                 sensorName = sensorLink + "_" + frameName;
             
-           
+            # Add sensors in Gazebo format
             pose = toGazeboPose(offset,rot); 
 
             #sys.stderr.write("Processing link " + link['uid'] + "\n")
 
-            sensor_el =  generator.getURDFSensor(sensorLink, sensorType, sensorName, pose, updateRate, sensorBlobs)
+            gazebo_sensor_el =  generatorGazeboSensors.getURDFSensor(sensorLink, sensorType, sensorName, pose, updateRate, sensorBlobs)
  
-            self.urdf_xml.append(sensor_el);
+            self.urdf_xml.append(gazebo_sensor_el);
+            
+            urdf_origin_el = toURDFOriginXMLElement(offset,rot);
+            
+            # Add sensor in URDF format 
+            sensor_el =  generatorURDFSensors.getURDFSensor(sensorLink, sensorType, sensorName, urdf_origin_el)
+
+
 
     def parseYAMLConfig(self, configFile):
         """Parse the YAML configuration File, if it exists.
@@ -767,11 +781,7 @@ class Converter:
                 # The  frame of the link attached with a fixed joint 
                 # can be optionally set to a USERADDED frame using the 
                 # linkFrames options
-                #print(str(link))
-                #print("Link " + str(link['uid']) + " has a fixed joint parent");
                 if( link['uid'] in self.linkFramesMap.keys() ):
-                    #print(" Using " + self.linkFramesMap[link['uid']]["frame"] + " of link " + self.linkFramesMap[link['uid']]["frameReferenceLink"] + " as link frame for " + link['uid'])
-                    #print(str(self.linkNameDisplayName2fid));
                     new_link_frame_fid = self.linkNameDisplayName2fid[ (self.linkFramesMap[link['uid']]["frameReferenceLink"],self.linkFramesMap[link['uid']]["frameName"])];
                     (off, rot) = self.tfman.get(WORLD,new_link_frame_fid)
                     self.tfman.add(off, rot, WORLD, "X" + id)
@@ -1545,6 +1555,16 @@ def toGazeboPose(offset,quaternion):
     pose = str(offset[0]) + " " + str(offset[1]) + " " + str(offset[2]) + " " + str(rpy[0]) + " " + str(rpy[1]) + " " + str(rpy[2]);
 
     return pose;
+    
+def toURDFOriginXMLElement(offset,quaternion):
+    """Convert an offset + quaternion to a origin URDF element"""
+    origin_el = lxml.etree.Element("origin");
+    
+    rpy = list(euler_from_quaternion(quaternion))
+    origin_el.set("rpy", str(rpy[0]) + " " + str(rpy[1]) + " " + str(rpy[2]));
+    origin_el.set("xyz", str(offset[0]) + " " + str(offset[1]) + " " + str(offset[2]));
+
+    return origin_el;
 
 class CustomTransformManager:
     """Custom class to store several transforms between different frames. 
@@ -1594,6 +1614,43 @@ class CustomTransformManager:
             return_matrix = numpy.dot(Invert4x4Matrix(self.transform_map[parent]),self.transform_map[child]);
         return return_matrix
           
+ 
+class URDFSensorsGenerator:
+   """ Generator for URDF sensors using iDynTree URDF dialect,
+    
+       See https://github.com/robotology/idyntree/blob/master/doc/model_loading.md .
+   """
+    
+   def __init__(self):
+       self.dummy = ""
+   
+   def getURDFForceTorque(self, jointName, sensorName, directionChildToParent): 
+       sensor_el = lxml.etree.Element("sensor")
+       sensor_el.set("name",sensorName);
+       sensor_el.set("type","force_torque");
+       parent_el = lxml.etree.SubElement(sensor_el,"parent");
+       parent_el.set("joint",jointName);
+       force_torque_el = lxml.etree.SubElement(sensor_el,"force_torque")
+       frame_el = lxml.etree.SubElement(force_torque_el,"frame")
+       frame_el.text = "child";  
+       measure_direction_el = lxml.etree.SubElement(force_torque_el,"measure_direction")
+       if( directionChildToParent ):
+           measure_direction_el.text = "child_to_parent"
+       else:
+           measure_direction_el.text = "parent_to_child"
+
+       return sensor_el;
+
+   def getURDFSensor(self, linkName, sensorType, sensorName, origin_el):
+       sensor_el = lxml.etree.Element("sensor")
+       sensor_el.set("name",sensorName);
+       sensor_el.set("type", sensorType);
+       parent_el = lxml.etree.SubElement(sensor_el,"parent");
+       parent_el.set("link",linkName);
+       sensor_el.append(origin_el);
+       
+       return sensor_el;
+
 
 class URDFGazeboSensorsGenerator:
    def __init__(self):
