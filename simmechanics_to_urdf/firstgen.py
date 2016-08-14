@@ -252,6 +252,7 @@ class Converter:
             
             # Add sensor in URDF format 
             sensor_el =  generatorURDFSensors.getURDFSensor(sensorLink, sensorType, sensorName, urdf_origin_el)
+            self.urdf_xml.append(sensor_el);
 
 
 

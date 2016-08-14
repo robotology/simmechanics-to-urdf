@@ -3,10 +3,12 @@ language: python
 python:
 - "2.7"
 - "3.3"
+- "3.4"
+- "3.5"
 
 before_install:
 # install dependencies available on pip
-- pip install numpy lxml PyYAML --use-mirrors
+- pip install numpy lxml PyYAML
 # install urdf_parser_py
 - git clone https://github.com/ros/urdf_parser_py
 - cd urdf_parser_py
