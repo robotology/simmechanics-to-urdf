@@ -248,7 +248,7 @@ class Converter:
 
             #sys.stderr.write("Processing link " + link['uid'] + "\n")
 
-            gazeboSensorType = self.sensorTypeUrdf2sdf[sensorType];
+            gazeboSensorType = self.sensorTypeUrdf2sdf.get(sensorType,sensorType);
 
             gazebo_sensor_el =  generatorGazeboSensors.getURDFSensor(sensorLink, gazeboSensorType, sensorName, pose, updateRate, sensorBlobs)
  
