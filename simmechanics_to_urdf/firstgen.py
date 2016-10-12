@@ -28,7 +28,7 @@ COLORS =[("green", (0, 1, 0, 1)), ("black", (0, 0, 0, 1)), ("red", (1, 0, 0, 1))
      ("dblue", (0, 0, .8, 1)), ("dgreen", (.1, .8, .1, 1)), ("gray", (.5, .5, .5, 1))]
      
 # List of supported sensor types
-SENSOR_TYPES = ["altimeter", "camera", "contact", "depth", "gps", "gpu_ray", "imu", "logical_camera",
+SENSOR_TYPES = ["altimeter", "camera", "contact", "depth", "gps", "gpu_ray", "imu", "accelerometer", "gyroscope", "logical_camera",
                 "magnetometer", "multicamera", "ray", "rfid", "rfidtag", "sonar", "wireless_receiver", "wireless_transmitter"]
                 
 # List of supported geometric shapes and their properties
@@ -138,6 +138,7 @@ class Converter:
         self.realRootLink = None
         self.outputString = "".encode('UTF-8')
         self.sensorIsValid = False
+        self.sensorsDefaultMap = {}
         # map mapping USERADDED linkName+displayName to fid of the frame
         self.linkNameDisplayName2fid = {}
 
@@ -146,6 +147,9 @@ class Converter:
 
         # Extra Transforms for Debugging
         self.tfman.add([0,0,0], [0.70682518,0,0,0.70682518], "ROOT", WORLD) # rotate so Z axis is up
+
+        # convert sensor type to gazebo respective sensor type
+        self.sensorTypeUrdf2sdf = {'imu':'imu','accelerometer':'imu','gyroscope':'imu'}
 
     def convert(self, filename, yaml_configfile, csv_configfile, mode, outputfile_name):
         self.mode = mode
@@ -244,7 +248,9 @@ class Converter:
 
             #sys.stderr.write("Processing link " + link['uid'] + "\n")
 
-            gazebo_sensor_el =  generatorGazeboSensors.getURDFSensor(sensorLink, sensorType, sensorName, pose, updateRate, sensorBlobs)
+            gazeboSensorType = self.sensorTypeUrdf2sdf.get(sensorType,sensorType);
+
+            gazebo_sensor_el =  generatorGazeboSensors.getURDFSensor(sensorLink, gazeboSensorType, sensorName, pose, updateRate, sensorBlobs)
  
             self.urdf_xml.append(gazebo_sensor_el);
             
@@ -324,6 +330,31 @@ class Converter:
         #        exported_frame["frameName"]
             
  
+        # Get default parameters in "sensors" list
+        # As we build the list of default sensors, we track the
+        # respective references to remove from self.sensors
+        sensorsToRemove = [];
+        for sensor in self.sensors:
+            if( sensor.get("sensorName") == 'default' ):
+                # for caution, void frame names
+                sensor["frameName"] = None;
+                sensor["exportedFrameName"] = None;
+                # copy parameters
+                self.sensorsDefaultMap[sensor.get("sensorType")] = sensor.copy();
+                sensorsToRemove.append(sensor);
+
+        # Remove default sensor parameters objects from sensors list
+        for sensor in sensorsToRemove:
+            self.sensors.remove(sensor);
+
+        # Go again through the "sensors" list and replace unset values by the default ones
+        for sensor in self.sensors:
+            defaultSensor = self.sensorsDefaultMap.get(sensor.get("sensorType"));
+            if( defaultSensor is not None):
+                mergedSensor = defaultSensor.copy();
+                mergedSensor.update(sensor);
+                sensor.update(mergedSensor);
+
         for sensor in self.sensors:
             if( sensor["exportFrameInURDF"] ): 
                 exported_frame = {}
