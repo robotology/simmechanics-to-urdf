@@ -12,6 +12,9 @@ before_install:
 # install urdf_parser_py
 - git clone https://github.com/ros/urdf_parser_py
 - cd urdf_parser_py
+# At some point in early 2017 the default branch of urdf_parser_py has become indigo-devel,
+# we explicitly switch to master to avoid the catkin dependency 
+- git checkout master 
 - python setup.py install
 - cd ../
 
