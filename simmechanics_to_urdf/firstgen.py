@@ -290,6 +290,8 @@ class Converter:
             print("Error: both filenameformat and filenameformatchangeext are defined")
             assert(False)
 
+        self.name = configuration.get('robotName',None)
+
         self.forcelowercase = configuration.get('forcelowercase', True)
         
         self.stringToRemoveFromMeshFileName = configuration.get('stringToRemoveFromMeshFileName', False)
@@ -456,7 +458,8 @@ class Converter:
         # Grab name from root element AND recursively parse
         if name == "PhysicalModelingXMLFile":
             dict = getDictionary(element)
-            self.name = dict['name']
+            if (self.name is None):
+                self.name = dict['name']
 
         if name == "Body":
             self.parseLink(element)
