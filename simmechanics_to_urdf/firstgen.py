@@ -171,8 +171,8 @@ class Converter:
         if mode == "xml":
             #print("URDF model to print : \n " + str(self.result) + "\n" )
             self.generateXML()
-            self.addSensors()
             addXMLBlobs(self.XMLBlobs, self.urdf_xml)
+            self.addSensors()
             self.outputString = lxml.etree.tostring(self.urdf_xml,pretty_print=True)
             
         if mode == "graph":
