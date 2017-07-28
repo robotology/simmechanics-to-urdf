@@ -487,10 +487,27 @@ class Converter:
 
         # Save the color if it exists
         if 'MaterialProp' in linkdict:
+            # color
             colorelement = linkdict['MaterialProp'][1]
             color = colorelement.childNodes[0].data
+            # ambient
+            ambientelement = linkdict['MaterialProp'][3]
+            ambient = ambientelement.childNodes[0].data
+            linkdict['ambient'] = float(ambient);
+            # diffuse
+            diffuseelement = linkdict['MaterialProp'][5]
+            diffuse = diffuseelement.childNodes[0].data
+            linkdict['diffuse'] = float(diffuse);
+            # specular
+            specularelement = linkdict['MaterialProp'][7]
+            specular = specularelement.childNodes[0].data
+            linkdict['specular'] = float(specular);
+            # transparency
+            transparencyelement = linkdict['MaterialProp'][11]
+            transparency = transparencyelement.childNodes[0].data
+            linkdict['color'] = list(map(float, color.split(","))) + [1.0 - float(transparency)]
+
             linkdict['MaterialProp'] = None
-            linkdict['color'] = list(map(float, color.split(","))) + [1.0]
 
         self.links[uid] = linkdict
         self.parseFrames(frames, uid)
@@ -994,6 +1011,36 @@ class Converter:
                 visual.material.color = urdf_parser_py.urdf.Color(r,g,b,a)
                 self.usedcolors[cname] = True
 
+            # Create a new gazebo blob for applying colors in the sdf
+            gzblobmaterial_el = lxml.etree.Element("gazebo", reference=id)
+            gzvisual_el = lxml.etree.SubElement(gzblobmaterial_el, "visual")
+            gzmaterial_el = lxml.etree.SubElement(gzvisual_el, "material")
+
+            # Use specified comonents if they exist
+            if 'ambient' in linkdict:
+                ambient_const = linkdict['ambient']
+                ambient_el = lxml.etree.SubElement(gzmaterial_el, "ambient")
+                ambient_el.text = str(r*ambient_const) + " " + str(g*ambient_const) + " " + str(b*ambient_const) + " " + str(a);
+
+            if 'diffuse' in linkdict:
+                diffuse_const = linkdict['diffuse']
+                diffuse_el = lxml.etree.SubElement(gzmaterial_el, "diffuse")
+                diffuse_el.text = str(r*diffuse_const) + " " + str(g*diffuse_const) + " " + str(b*diffuse_const) + " " + str(a);
+
+            if 'specular' in linkdict:
+                specular_const = linkdict['specular']
+                specular_el = lxml.etree.SubElement(gzmaterial_el, "specular")
+                specular_el.text = str(r*specular_const) + " " + str(g*specular_const) + " " + str(b*specular_const) + " " + str(a);
+
+            if 'emission' in linkdict:
+                emission_const = linkdict['emission']
+                emission_el = lxml.etree.SubElement(gzmaterial_el, "emission")
+                emission_el.text = str(r*emission_const) + " " + str(g*emission_const) + " " + str(b*emission_const) + " " + str(a);
+
+            # Add the blob only if there is a child inside <gazebo><visual><material>
+            if len(gzmaterial_el.getchildren()) > 0:
+                addXMLBlob(gzblobmaterial_el, self.XMLBlobs)
+
         else:
             visual = None
             collision = None
@@ -1435,12 +1482,18 @@ class Converter:
 def addXMLBlobs(blobs, parentXML):
     if not(blobs is None):
         for blob in blobs:
-            if not( blob is None or blob is ''):
-                blob_el = lxml.etree.fromstring(blob);
-                parentXML.append(blob_el);
-            else:
-                sys.stderr.write("Warning: malformed XMLBlob for: " + parentXML.get("name") + "\n")
-                sys.stderr.write("Ingnoring it" + "\n")
+            addXMLBlob(blob, parentXML)
+
+def addXMLBlob(blob, parentXML):
+    if not(blob is None or blob is ''):
+        if type(blob) is str:
+            blob_el = lxml.etree.fromstring(blob);
+            parentXML.append(blob_el);
+        else:
+            parentXML.append(blob);
+    else:
+        sys.stderr.write("Warning: malformed XMLBlob for: " + parentXML.get("name") + "\n")
+        sys.stderr.write("Ignoring it" + "\n")
 
 def quaternion_matrix(quaternion):
     """Return homogeneous rotation matrix from quaternion.
