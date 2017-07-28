@@ -26,14 +26,14 @@ COLORS =[("green", (0, 1, 0, 1)), ("black", (0, 0, 0, 1)), ("red", (1, 0, 0, 1))
      ("blue", (0, 0, 1, 1)), ("yellow", (1, 1, 0, 1)), ("pink", (1, 0, 1, 1)),
      ("cyan", (0, 1, 1, 1)), ("green", (0, 1, 0, 1)), ("white", (1, 1, 1, 1)),
      ("dblue", (0, 0, .8, 1)), ("dgreen", (.1, .8, .1, 1)), ("gray", (.5, .5, .5, 1))]
-     
+
 # List of supported sensor types
 SENSOR_TYPES = ["altimeter", "camera", "contact", "depth", "gps", "gpu_ray", "imu", "accelerometer", "gyroscope", "logical_camera",
                 "magnetometer", "multicamera", "ray", "rfid", "rfidtag", "sonar", "wireless_receiver", "wireless_transmitter"]
-                
+
 # List of supported geometric shapes and their properties
 GEOMETRIC_SHAPES = {
-    'box': ['origin', 'size'], 
+    'box': ['origin', 'size'],
     'cylinder': ['origin', 'radius', 'length',],
     'sphere': ['origin', 'radius']}
 
@@ -174,24 +174,24 @@ class Converter:
             addXMLBlobs(self.XMLBlobs, self.urdf_xml)
             self.addSensors()
             self.outputString = lxml.etree.tostring(self.urdf_xml,pretty_print=True)
-            
+
         if mode == "graph":
             self.outputString = self.graph().encode('UTF-8')
 
         if mode == "debug":
             self.debugPrints()
-            
-        # save the output to file or print in the terminal    
+
+        # save the output to file or print in the terminal
         if (outputfile_name is not None):
             f = open(outputfile_name, 'wb')
             f.write(self.outputString)
             f.close()
         else:
             print(self.outputString)
-        
+
     def debugPrints(self):
-        print("root_link_T_l_foot_CG :\n " + str(self.tfman.getHomTransform("X"+"root_link","l_foot"+"CG")[:3,3])); 
-        print("root_link_T_r_foot_CG :\n " + str(self.tfman.getHomTransform("X"+"root_link","r_foot"+"CG")[:3,3])); 
+        print("root_link_T_l_foot_CG :\n " + str(self.tfman.getHomTransform("X"+"root_link","l_foot"+"CG")[:3,3]));
+        print("root_link_T_r_foot_CG :\n " + str(self.tfman.getHomTransform("X"+"root_link","r_foot"+"CG")[:3,3]));
 
     def generateXML(self):
         self.urdf_xml = self.result.to_xml();
@@ -206,57 +206,57 @@ class Converter:
                 sensorName = referenceJoint
             else:
                 sensorName = ftSens["sensorName"];
-                
-            # Add sensor in Gazebo format 
+
+            # Add sensor in Gazebo format
             ft_gazebo_el = generatorGazeboSensors.getURDFForceTorque(referenceJoint,sensorName,ftSens["directionChildToParent"])
             self.urdf_xml.append(ft_gazebo_el);
-            
-            # Add sensor in URDF format 
+
+            # Add sensor in URDF format
             ft_sensor_el = generatorURDFSensors.getURDFForceTorque(referenceJoint,sensorName,ftSens["directionChildToParent"]);
             self.urdf_xml.append(ft_sensor_el);
-        
-        # for the other sensors, we rely on pose given by a USERADDED frame 
-        for sensor in self.sensors: 
-            sensorLink = sensor["linkName"]; 
+
+        # for the other sensors, we rely on pose given by a USERADDED frame
+        for sensor in self.sensors:
+            sensorLink = sensor["linkName"];
             frameName = sensor.get("frameName");
-            referenceLink = sensor.get("frameReferenceLink"); 
+            referenceLink = sensor.get("frameReferenceLink");
             sensorName    = sensor.get("sensorName");
             sensorType = sensor.get("sensorType");
             updateRate = sensor.get("updateRate");
             sensorBlobs = sensor.get("sensorBlobs");
-            
+
             self.isValidSensor(sensorType);
 
             if( frameName is None ):
-                # If frame is not specified, the sensor frame is the link frame 
-                offset = [0.0, 0.0, 0.0]; 
+                # If frame is not specified, the sensor frame is the link frame
+                offset = [0.0, 0.0, 0.0];
                 rot    = quaternion_from_matrix(numpy.identity(4));
             else:
                 # The default referenceLink is the sensorLink itself
-                if( referenceLink is None): 
-                    referenceLink = sensorLink; 
-                
-                # Get user added frame 
+                if( referenceLink is None):
+                    referenceLink = sensorLink;
+
+                # Get user added frame
                 sensor_frame_fid = self.linkNameDisplayName2fid[ (referenceLink,frameName) ];
                 (offset, rot) = self.tfman.get( "X"+ sensorLink , sensor_frame_fid)
 
-            if( sensorName is None): 
+            if( sensorName is None):
                 sensorName = sensorLink + "_" + frameName;
-            
+
             # Add sensors in Gazebo format
-            pose = toGazeboPose(offset,rot); 
+            pose = toGazeboPose(offset,rot);
 
             #sys.stderr.write("Processing link " + link['uid'] + "\n")
 
             gazeboSensorType = self.sensorTypeUrdf2sdf.get(sensorType,sensorType);
 
             gazebo_sensor_el =  generatorGazeboSensors.getURDFSensor(sensorLink, gazeboSensorType, sensorName, pose, updateRate, sensorBlobs)
- 
+
             self.urdf_xml.append(gazebo_sensor_el);
-            
+
             urdf_origin_el = toURDFOriginXMLElement(offset,rot);
-            
-            # Add sensor in URDF format 
+
+            # Add sensor in URDF format
             sensor_el =  generatorURDFSensors.getURDFSensor(sensorLink, sensorType, sensorName, urdf_origin_el)
             self.urdf_xml.append(sensor_el);
 
@@ -286,52 +286,52 @@ class Converter:
             # if neither filenameformat nor filenameformatchangeext is defined, use the default
             self.filenameformat = '%s'
         if( self.filenameformat is not None and self.filenameformatchangeext is not None ):
-            #    
+            #
             print("Error: both filenameformat and filenameformatchangeext are defined")
             assert(False)
 
         self.name = configuration.get('robotName',None)
 
         self.forcelowercase = configuration.get('forcelowercase', True)
-        
+
         self.stringToRemoveFromMeshFileName = configuration.get('stringToRemoveFromMeshFileName', False)
 
         ## Frames related options
-        
+
         # If the exportAllUserAdded frame is setted, export all USERADDED frames
         self.exportAllUseradded = configuration.get('exportAllUseradded', False)
 
-        # Load the linkFrames 
+        # Load the linkFrames
         self.linkFrames = configuration.get('linkFrames',[])
         self.linkFramesMap = {}
-        for link_frame in self.linkFrames: 
+        for link_frame in self.linkFrames:
             # add default frameReferenceLink if not included
             if( link_frame.get("frameReferenceLink") is None ):
                  link_frame["frameReferenceLink"] = link_frame["linkName"];
             self.linkFramesMap[link_frame["linkName"]] = link_frame;
 
-        # Get a list of sensors 
+        # Get a list of sensors
         self.forceTorqueSensors = configuration.get('forceTorqueSensors',{});
         self.sensors = configuration.get('sensors',{});
 
-        # Load the exported frames 
+        # Load the exported frames
         exportedFrames = configuration.get('exportedFrames',[])
         self.exportedFramesMap = {}
         for exported_frame in exportedFrames:
             if( exported_frame.get("frameReferenceLink") is not None ):
                 self.exportedFramesMap[(exported_frame["frameReferenceLink"],exported_frame["frameName"])] = exported_frame;
             else:
-                # if the frameReferenceLink is missing, just add the export_frame dict using only the frameName as key: 
+                # if the frameReferenceLink is missing, just add the export_frame dict using only the frameName as key:
                 # we will add the full tutple (frameReferenceLink,frameName) later
                 self.exportedFramesMap[exported_frame["frameName"]] = exported_frame;
 
-        # Augment the exported frames with sensors for which the exportFrameInURDF option is enabled 
+        # Augment the exported frames with sensors for which the exportFrameInURDF option is enabled
         #for ftSens in self.forceTorqueSensors:
-        #    if( ftSens["exportFrameInURDF"] ): 
+        #    if( ftSens["exportFrameInURDF"] ):
         #        exported_frame = {}
         #        exported_frame["frameName"]
-            
- 
+
+
         # Get default parameters in "sensors" list
         # As we build the list of default sensors, we track the
         # respective references to remove from self.sensors
@@ -358,10 +358,10 @@ class Converter:
                 sensor.update(mergedSensor);
 
         for sensor in self.sensors:
-            if( sensor["exportFrameInURDF"] ): 
+            if( sensor["exportFrameInURDF"] ):
                 exported_frame = {}
-                exported_frame["frameName"] = sensor["frameName"] 
-                if( sensor.get("exportedFrameName") is not None ): 
+                exported_frame["frameName"] = sensor["frameName"]
+                if( sensor.get("exportedFrameName") is not None ):
                     exported_frame["exportedFrameName"] = sensor["exportedFrameName"];
                 else:
                     exported_frame["exportedFrameName"] = sensor["sensorName"];
@@ -371,9 +371,9 @@ class Converter:
                 else:
                     exported_frame["frameReferenceLink"] = sensor["linkName"];
 
-                self.exportedFramesMap[(exported_frame["frameReferenceLink"],exported_frame["frameName"])] = exported_frame; 
-            
- 
+                self.exportedFramesMap[(exported_frame["frameReferenceLink"],exported_frame["frameName"])] = exported_frame;
+
+
         # Load scales options
         scale_str = configuration.get('scale', None)
         if( scale_str is not None ):
@@ -387,20 +387,20 @@ class Converter:
 
         self.effort_limit_fallback = configuration.get('effort_limit',50000)
         self.velocity_limit_fallback = configuration.get('velocity_limit',50000)
-                     
+
         self.rename = configuration.get('rename',{})
-        
+
         # Get map of links for which we explicitly assign the mass
         self.assignedMasses = configuration.get('assignedMasses',{})
-        
-        # Get map of links for which we explicitly assign the mass 
+
+        # Get map of links for which we explicitly assign the mass
         self.assignedInertiasMap = {}
         assignedInertiasVector = configuration.get('assignedInertias',{})
         for el in assignedInertiasVector:
             link = el["linkName"]
             self.assignedInertiasMap[link] = el;
-            
-        # Get map of links for which we explicitly assign the collision geometry 
+
+        # Get map of links for which we explicitly assign the collision geometry
         assignedCollisionGeometryVector = configuration.get('assignedCollisionGeometry',{})
         for el in assignedCollisionGeometryVector:
             link = el["linkName"]
@@ -425,11 +425,11 @@ class Converter:
         for mirrored_link_dict in mirroredInertia:
             mirroredLink = mirrored_link_dict["mirroredLink"]
             self.mirroredInertiaMap[mirroredLink] = mirrored_link_dict;
- 
+
         self.inertiaWorkaround = configuration.get('inertiaWorkaround',None);
         if( self.inertiaWorkaround is not None ):
             self.mirroredLinks = self.inertiaWorkaround["mirroredLinks"].split()
-        else: 
+        else:
             self.mirroredLinks = None;
 
         # Get a list of joints for which we want to invert the rotation axis direction
@@ -449,7 +449,7 @@ class Converter:
                 reader = csv.DictReader(csvfile, dialect=my_dialect)
                 for row in reader:
                     self.joint_configuration[row["joint_name"]] = row
-        
+
 
     def parse(self, element):
         """Recursively goes through all XML elements
@@ -487,10 +487,27 @@ class Converter:
 
         # Save the color if it exists
         if 'MaterialProp' in linkdict:
+            # color
             colorelement = linkdict['MaterialProp'][1]
             color = colorelement.childNodes[0].data
+            # ambient
+            ambientelement = linkdict['MaterialProp'][3]
+            ambient = ambientelement.childNodes[0].data
+            linkdict['ambient'] = float(ambient);
+            # diffuse
+            diffuseelement = linkdict['MaterialProp'][5]
+            diffuse = diffuseelement.childNodes[0].data
+            linkdict['diffuse'] = float(diffuse);
+            # specular
+            specularelement = linkdict['MaterialProp'][7]
+            specular = specularelement.childNodes[0].data
+            linkdict['specular'] = float(specular);
+            # transparency
+            transparencyelement = linkdict['MaterialProp'][11]
+            transparency = transparencyelement.childNodes[0].data
+            linkdict['color'] = list(map(float, color.split(","))) + [1.0 - float(transparency)]
+
             linkdict['MaterialProp'] = None
-            linkdict['color'] = list(map(float, color.split(","))) + [1.0]
 
         self.links[uid] = linkdict
         self.parseFrames(frames, uid)
@@ -511,26 +528,26 @@ class Converter:
             # is different from urdf_link
             fid = parent_link +  fdict['name']
 
-            # for using the ref numbers of the frame we build a map from the ref numbers 
+            # for using the ref numbers of the frame we build a map from the ref numbers
             # to the names
             # fid = str(frame.getAttribute("ref"))
             ref = str(frame.getAttribute("ref"))
-            
+
             self.ref2nameMap[ref] =  fid;
 
             fdict['parent'] = parent_link
 
             offset = getlist(fdict['position'])
 
-            # for models mirrored in Creo there is a strange bug 
-            # in SimMechanics Link that causes the inertia of the 
-            # mirrored links to be wrongly placed. We add here 
-            # some specific workaround for those link, if this 
+            # for models mirrored in Creo there is a strange bug
+            # in SimMechanics Link that causes the inertia of the
+            # mirrored links to be wrongly placed. We add here
+            # some specific workaround for those link, if this
             # is requested in the YAML file
             if( self.mirroredLinks is not None ):
                 if( fdict['name'] == 'CG' and parent_link in self.mirroredLinks ):
-                    offset[2] = -offset[2]; 
-           
+                    offset[2] = -offset[2];
+
             units = fdict['positionUnits']
             for i in range(0, len(offset)):
                 offset[i] = convert(offset[i], units)
@@ -541,20 +558,20 @@ class Converter:
             # use the name plus a suffix (for CG or CS1...
             # If the frame does not have a reference number,
             # but it is a USERADDED frame (frame added on the CAD
-            # for export in simmechanics) and the exportAllUserAdded 
-            # option is set to True, export the frame using the displayName tag 
+            # for export in simmechanics) and the exportAllUserAdded
+            # option is set to True, export the frame using the displayName tag
             # otherwise ignore the frame
             if fdict['nodeID'].endswith('(USERADDED)'):
                 useradded_frame_name = fdict['displayName']
 
                 # clean all possible exportedFrames that were missing the frameReferenceLink option
                 if useradded_frame_name in self.exportedFramesMap.keys():
-                    buf_export_frame = self.exportedFramesMap[useradded_frame_name] 
+                    buf_export_frame = self.exportedFramesMap[useradded_frame_name]
                     buf_export_frame["frameRefenceLink"] = parent_link;
-                    self.exportedFramesMap[(parent_link,useradded_frame_name)] = buf_export_frame; 
- 
-                # Frame is added if exportAllUseradded is setted or 
-                # if frame is part of exportedFrames structure 
+                    self.exportedFramesMap[(parent_link,useradded_frame_name)] = buf_export_frame;
+
+                # Frame is added if exportAllUseradded is setted or
+                # if frame is part of exportedFrames structure
                 if self.exportAllUseradded or () or ((parent_link,useradded_frame_name) in self.exportedFramesMap.keys()):
                     map_key = (parent_link,useradded_frame_name);
                     if( map_key in self.exportedFramesMap.keys() ):
@@ -576,9 +593,9 @@ class Converter:
                     self.links[useradded_frame_name] = linkdict
 
                 # Storing the displayName to the fid of the frame, to retrive the USERADDED frame when assigning link frames
-                self.linkNameDisplayName2fid[(parent_link,fdict['displayName'])] = fid;           
-		  
-                       
+                self.linkNameDisplayName2fid[(parent_link,fdict['displayName'])] = fid;
+
+
 
             self.tfman.add(offset, quat, WORLD, fid)
             self.frames[fid] = fdict
@@ -630,7 +647,7 @@ class Converter:
 
             # Default to continuous joints
             joint['type'] = jdict.get('type', 'continuous')
-            
+
             if 'axis' in jdict:
                 #print("axis" + str(jdict['axis']))
                 joint['axis'] = jdict['axis']
@@ -639,7 +656,7 @@ class Converter:
                 joint['limits'] = jdict['limits']
 
         # If some limits are defined in the CSV joint configuration file load them
-       
+
 
         #if the joint is revolute but no limits are defined, switch to continuous
         if 'limits' not in joint.keys()  and joint['type'] == "revolute":
@@ -653,7 +670,7 @@ class Converter:
            by breadth first search. Then construct new coordinate frames
            from new tree structure"""
 
-        #resolve the undefined reference for all the joints 
+        #resolve the undefined reference for all the joints
         for jid in self.joints:
             jointdict = self.joints[jid]
             if( 'parent' not in jointdict.keys() ):
@@ -661,7 +678,7 @@ class Converter:
             if( 'child' not in jointdict.keys() ):
                 jointdict['child'] = self.ref2nameMap[jointdict['ref_child']]
 
-            # Find the real rootLink 
+            # Find the real rootLink
             if( jointdict['parent'].startswith('RootPart') and jointdict['type'] == 'fixed' ):
                 if( self.realRootLink is not None ):
                     pass
@@ -669,28 +686,28 @@ class Converter:
                     #print("       at https://github.com/robotology-playground/simmechanics-to-urdf/issues/new")
                 else:
                     self.realRootLink = self.getLinkNameByFrame(jointdict['child'])
-        
+
         # Some postprocessing that was not possible to do while parsing
         for extraframe in self.extraframes:
             pid = extraframe['parentlink']
-            # Some USERADDED frames could be attached to the dummy root RootPart 
-            # In this case substitute the dummy root with the real first link 
+            # Some USERADDED frames could be attached to the dummy root RootPart
+            # In this case substitute the dummy root with the real first link
             # attached to the RootPart with a fixed link
             if pid == 'RootPart':
 
                 extraframe['parentlink'] = self.realRootLink
-                # notice that we can disregard the original parent frame 
+                # notice that we can disregard the original parent frame
                 # of the joint because it is a fixed joint
 
         # Add necessary information for any frame in the SimMechanics XML
-        # file that we want to save to URDF. Given that URDF does not 
-        # have a frame concept at all, we are bound to create "dummy" 
-        # links and joints to express the notion of frames 
+        # file that we want to save to URDF. Given that URDF does not
+        # have a frame concept at all, we are bound to create "dummy"
+        # links and joints to express the notion of frames
         for extraframe in self.extraframes:
             pid = extraframe['parentlink']
             cid = extraframe['framename']
 
-            joint_name = cid + "_fixed_joint"; 
+            joint_name = cid + "_fixed_joint";
 
             self.links[pid]['neighbors'].append(cid)
             self.links[pid]['jointmap'][cid] = joint_name
@@ -709,8 +726,8 @@ class Converter:
             pid = self.getLinkNameByFrame(jointdict['parent'])
             cid = self.getLinkNameByFrame(jointdict['child'])
             parent = self.links[pid]
-            child = self.links[cid] 
-            
+            child = self.links[cid]
+
             parent['neighbors'].append(cid)
             parent['jointmap'][cid] = jid
             child['neighbors'].append(pid)
@@ -756,10 +773,10 @@ class Converter:
 
         # build new link coordinate frames
         # URDF has the unconvenient requirement that the link frame
-        # origin should be placed in the axis of the parent joint, 
-        # so we have to place special care in 
+        # origin should be placed in the axis of the parent joint,
+        # so we have to place special care in
         for id in self.links:
- 
+
             link = self.links[id]
             if not 'parent' in link:
                 continue
@@ -773,22 +790,22 @@ class Converter:
                 if( joint['type'] == 'fixed' ):
                     jointIsNotFixed = False
             # If a frame is not fixed, then the default link frame
-            # has the orientation of the link "CS1" frame and the origin 
-            # of the joint. 
-            # However using the linkFrames options is possible to use an 
+            # has the orientation of the link "CS1" frame and the origin
+            # of the joint.
+            # However using the linkFrames options is possible to use an
             # USERADDED frame as the linkFrame. Given that the URDF enforces
             # the link frame origin to lay on the axis of parent joint, the USERADDED
             # frame is used unmodified only if its origin lays on joint axis.
-            # Otherwise the rotation of the frame will be left unchanged, and a new origin 
-            # will be found as the projection of the USERADDED frame origin to the axis (i.e. 
+            # Otherwise the rotation of the frame will be left unchanged, and a new origin
+            # will be found as the projection of the USERADDED frame origin to the axis (i.e.
             # the point on the axis closest to the USERADDED frame origin).
-            if( jointIsNotFixed and not (parentid == "GROUND")  ): 
+            if( jointIsNotFixed and not (parentid == "GROUND")  ):
                 if( self.linkFramesMap.get(link['uid']) is None ):
-                    # no frame redefinition 
+                    # no frame redefinition
                     (off1, rot1) = self.tfman.get(WORLD, ref)
                     (off2, rot2) = self.tfman.get(WORLD, id + "CS1")
                     self.tfman.add(off1, rot2, WORLD, "X" + id)
-                else: 
+                else:
                     # using a useradded frame
                     new_link_frame_fid = self.linkNameDisplayName2fid[ (self.linkFramesMap[link['uid']]["frameReferenceLink"],self.linkFramesMap[link['uid']]["frameName"])];
                     (new_link_frame_off, new_link_frame_rot) = self.tfman.get(WORLD,new_link_frame_fid)
@@ -797,24 +814,24 @@ class Converter:
                     jointdict = self.joints[link['jointmap'][parentid]]
                     axis_string = jointdict['axis'].replace(',', ' ')
                     axis = [float(axis_el) for axis_el in axis_string.split()]
-                     
-                    axis_np = numpy.array(axis) 
+
+                    axis_np = numpy.array(axis)
                     joint_offset_np = numpy.array(joint_offset)
                     new_link_frame_off_np = numpy.array(new_link_frame_off);
-                    
+
                     axis_normalized = axis_np/numpy.linalg.norm(axis_np);
-                     
+
                     # Projection math: project the frame origin on the joint axis
                     new_link_frame_off_projected = numpy.dot(new_link_frame_off_np-joint_offset_np,axis_normalized)*axis_normalized+joint_offset_np;
 
                     self.tfman.add(new_link_frame_off_projected, new_link_frame_rot, WORLD, "X" + id)
-                      
+
             else:
-                # If the parent joint is fixed, the URDF format does not 
-                # default we use enforce any constraint on the frame placement 
-                # and we use the id+"CS1" frame as the link frame. 
-                # The  frame of the link attached with a fixed joint 
-                # can be optionally set to a USERADDED frame using the 
+                # If the parent joint is fixed, the URDF format does not
+                # default we use enforce any constraint on the frame placement
+                # and we use the id+"CS1" frame as the link frame.
+                # The  frame of the link attached with a fixed joint
+                # can be optionally set to a USERADDED frame using the
                 # linkFrames options
                 if( link['uid'] in self.linkFramesMap.keys() ):
                     new_link_frame_fid = self.linkNameDisplayName2fid[ (self.linkFramesMap[link['uid']]["frameReferenceLink"],self.linkFramesMap[link['uid']]["frameName"])];
@@ -850,7 +867,7 @@ class Converter:
             self.outputLink(cid)
             self.outputJoint(jid, id)
             self.processLink(cid)
-            
+
     def isValidURDFInertia(self, inertia, tol):
         inertiaMatrix = numpy.zeros([3,3]);
         inertiaMatrix[0,0] = inertia.ixx;
@@ -862,49 +879,49 @@ class Converter:
         inertiaMatrix[2,0] = inertia.ixz;
         inertiaMatrix[2,1] = inertia.iyz;
         inertiaMatrix[2,2] = inertia.izz;
-        
+
         return self.isValidInertiaMatrix(inertiaMatrix, tol);
 
     def isValidInertiaMatrix(self, inertia, tol):
-        """Check that a matrix is a valid inertia matrix: 
+        """Check that a matrix is a valid inertia matrix:
            * Check simmetry
-           * Check positive definitess 
+           * Check positive definitess
            * Check triangular inequality of eigen values"""
-        # Check simmetry 
+        # Check simmetry
         deter = numpy.linalg.det(inertia)
-        if( abs((inertia[0,1]-inertia[1,0])/deter) > tol or 
-            abs((inertia[0,2]-inertia[2,0])/deter) > tol or 
+        if( abs((inertia[0,1]-inertia[1,0])/deter) > tol or
+            abs((inertia[0,2]-inertia[2,0])/deter) > tol or
             abs((inertia[1,2]-inertia[2,1])/deter) > tol ):
             sys.stderr.write("Inertia: " + str(inertia) + " is not a valid Inertia matrix because it is not simmetric.\n");
             return False;
 
-        # Compute eigenvalues 
-        [s,v] = numpy.linalg.eig(inertia) 
-        if( (s[0])/deter < tol or 
-            (s[1])/deter < tol or 
+        # Compute eigenvalues
+        [s,v] = numpy.linalg.eig(inertia)
+        if( (s[0])/deter < tol or
+            (s[1])/deter < tol or
             (s[2])/deter < tol ):
             sys.stderr.write("Inertia: " + str(inertia) + " is not a valid Inertia matrix because it has negative inertias on the principal axis.\n");
             return False;
- 
-        # Check triangle inequality 
-        if( ((s[0]+s[1]-s[2])/deter < tol) or 
+
+        # Check triangle inequality
+        if( ((s[0]+s[1]-s[2])/deter < tol) or
             ((s[1]+s[2]-s[0])/deter < tol) or
             ((s[0]+s[2]-s[1])/deter < tol) ):
             sys.stderr.write("Inertia: " + str(inertia) + " is not a valid Inertia matrix because it does not respect the triangle inequality.\n");
             return False;
-        
+
         return True;
-        
+
     def isValidSensor(self, sensorType):
         """ Checks if the specified sensor type is supported """
-        
-        self.sensorIsValid = sensorType in SENSOR_TYPES 
+
+        self.sensorIsValid = sensorType in SENSOR_TYPES
         if not self.sensorIsValid:
             raise TypeError('The sensor type ', sensorType, 'specified in the *.yaml file, is not supported.')
-            
+
     def isValidGeometricShape(self, geometricShapeData):
         """ Checks if the specified Geometric shape is supported and correctly defined """
-        
+
         geometricShape = geometricShapeData["geometricShape"]
         shape = geometricShape["shape"]
         supportedShapes = GEOMETRIC_SHAPES.keys()
@@ -913,18 +930,18 @@ class Converter:
             sys.stderr.write("Shape: '" + shape + "' is not supported.\n");
             sys.stderr.write("The following shapes are supported: " + ','.join(supportedShapes) + ".\n");
             return False;
-            
+
         geometricShapeIsCorrectlyDefined = True
         shapeRequiredParameters = GEOMETRIC_SHAPES[shape]
-        for parameter in shapeRequiredParameters: 
+        for parameter in shapeRequiredParameters:
             geometricShapeIsCorrectlyDefined = geometricShapeIsCorrectlyDefined and (parameter in geometricShape.keys())
         if not geometricShapeIsCorrectlyDefined:
             sys.stderr.write("The parameters of the shape: '" + shape + "' are not correctly defined.\n");
             sys.stderr.write("The following parameters are required: " + ','.join(shapeRequiredParameters) + ".\n");
             return False;
-        
+
         return True
-        
+
 
     def outputLink(self, id):
         """ Creates the URDF output for a single link """
@@ -944,7 +961,7 @@ class Converter:
             filename = linkdict['geometryFileName']
             if self.forcelowercase:
                 filename = filename.lower()
-                
+
             if self.stringToRemoveFromMeshFileName:
                 filename = filename.replace(self.stringToRemoveFromMeshFileName,'')
 
@@ -960,18 +977,18 @@ class Converter:
             (off, rot) = self.tfman.get("X" + id, id+"CS1")
             rpy = list(euler_from_quaternion(rot))
             visual.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
-            
+
             if( id in self.assignedCollisionGeometry ):
-                    # in this case the mesh will not be used as the 
-                    # collision geometry. Instead, a simple shape will 
-                    # be used. 
+                    # in this case the mesh will not be used as the
+                    # collision geometry. Instead, a simple shape will
+                    # be used.
                     geometricShapeData = self.assignedCollisionGeometry[id]
                     assert(self.isValidGeometricShape(geometricShapeData))
                     geometricShape = geometricShapeData["geometricShape"]
                     collisionOriginVector = [float(scale_el) for scale_el in geometricShape["origin"].split()]
                     collisionOrigin = urdf_parser_py.urdf.Pose(collisionOriginVector[0:3], collisionOriginVector[3:6])
                     collisionGeometry = self.createGeometry(geometricShape)
-                    
+
                     collision.origin = collisionOrigin
                     collision.geometry = collisionGeometry
             else:
@@ -993,7 +1010,37 @@ class Converter:
             if not cname in self.usedcolors:
                 visual.material.color = urdf_parser_py.urdf.Color(r,g,b,a)
                 self.usedcolors[cname] = True
-                
+
+            # Create a new gazebo blob for applying colors in the sdf
+            gzblobmaterial_el = lxml.etree.Element("gazebo", reference=id)
+            gzvisual_el = lxml.etree.SubElement(gzblobmaterial_el, "visual")
+            gzmaterial_el = lxml.etree.SubElement(gzvisual_el, "material")
+
+            # Use specified comonents if they exist
+            if 'ambient' in linkdict:
+                ambient_const = linkdict['ambient']
+                ambient_el = lxml.etree.SubElement(gzmaterial_el, "ambient")
+                ambient_el.text = str(r*ambient_const) + " " + str(g*ambient_const) + " " + str(b*ambient_const) + " " + str(a);
+
+            if 'diffuse' in linkdict:
+                diffuse_const = linkdict['diffuse']
+                diffuse_el = lxml.etree.SubElement(gzmaterial_el, "diffuse")
+                diffuse_el.text = str(r*diffuse_const) + " " + str(g*diffuse_const) + " " + str(b*diffuse_const) + " " + str(a);
+
+            if 'specular' in linkdict:
+                specular_const = linkdict['specular']
+                specular_el = lxml.etree.SubElement(gzmaterial_el, "specular")
+                specular_el.text = str(r*specular_const) + " " + str(g*specular_const) + " " + str(b*specular_const) + " " + str(a);
+
+            if 'emission' in linkdict:
+                emission_const = linkdict['emission']
+                emission_el = lxml.etree.SubElement(gzmaterial_el, "emission")
+                emission_el.text = str(r*emission_const) + " " + str(g*emission_const) + " " + str(b*emission_const) + " " + str(a);
+
+            # Add the blob only if there is a child inside <gazebo><visual><material>
+            if len(gzmaterial_el.getchildren()) > 0:
+                addXMLBlob(gzblobmaterial_el, self.XMLBlobs)
+
         else:
             visual = None
             collision = None
@@ -1005,26 +1052,26 @@ class Converter:
 
             inertial = urdf_parser_py.urdf.Inertial()
 
-            if( id not in self.mirroredInertiaMap ): 
+            if( id not in self.mirroredInertiaMap ):
                 # usual: get inertia informations from SimMechanics XML
                 units = linkdict['massUnits']
                 massval = convert(float(linkdict['mass']), units)
                 inertial.mass = massval
-                
-                # we check if a mass different from the one present in 
-                # the SimMechanics file is assigned for this link in the 
-                # yaml file 
+
+                # we check if a mass different from the one present in
+                # the SimMechanics file is assigned for this link in the
+                # yaml file
                 inertiaScaling = 1.0;
-                
+
                 if( id in self.assignedMasses ):
-                    # if it is, we have to change the mass and scale 
+                    # if it is, we have to change the mass and scale
                     # the inertia by multiplyng by new_mass/old_mass
                     # (the COM instead don't need any modification)
                     oldMass = inertial.mass;
                     newMass = self.assignedMasses[id];
                     inertial.mass = newMass;
                     inertiaScaling = newMass/oldMass;
-                    
+
                 matrix = getlist(linkdict["inertia"])
 
                 units = linkdict['inertiaUnits']
@@ -1039,10 +1086,10 @@ class Converter:
                 inertial.inertia.iyy = inertiaScaling*matrix[4]
                 inertial.inertia.iyz = inertiaScaling*matrix[5]
                 inertial.inertia.izz = inertiaScaling*matrix[8]
-                
+
                 if( id in self.assignedInertiasMap ):
                     # depending on the assigned inertia, we have to modify
-                    # some values of the inertia matrix. We will check the 
+                    # some values of the inertia matrix. We will check the
                     # resulting inertia to make sure that the inertia matrix
                     # is still physically consistent
                     if( 'xx' in self.assignedInertiasMap[id] ):
@@ -1051,7 +1098,7 @@ class Converter:
                         inertial.inertia.iyy = self.assignedInertiasMap[id]['yy']
                     if( 'zz' in self.assignedInertiasMap[id] ):
                         inertial.inertia.izz = self.assignedInertiasMap[id]['zz']
-                        
+
                     if( not self.isValidURDFInertia(inertial.inertia,1e-3) ):
                         sys.stderr.write("Warning: inertia matrix for link " + id + " is not physically consistent.\n");
 
@@ -1063,9 +1110,9 @@ class Converter:
                 rpy = list(euler_from_quaternion(rot))
 
                 inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
-            else: 
-                # if link is mirroredInertia, we should not trust the inertial infromation 
-                # provided by SimMechanics XML because it could be buggy. We will mirror  
+            else:
+                # if link is mirroredInertia, we should not trust the inertial infromation
+                # provided by SimMechanics XML because it could be buggy. We will mirror
                 # the inertia information of another link instead
                 mirroredLink = id
                 originalLink = self.mirroredInertiaMap[mirroredLink]["originalLink"];
@@ -1077,13 +1124,13 @@ class Converter:
                     assert(False);
 
                 originalLinkDict = self.links[originalLink]
-        
-                # Mass: the mass is simply copied by the original link 
+
+                # Mass: the mass is simply copied by the original link
                 units = originalLinkDict['massUnits']
                 massval = convert(float(originalLinkDict['mass']), units)
                 inertial.mass = massval
 
-                # COM: we have to express the COM in simmetryReferenceLink, 
+                # COM: we have to express the COM in simmetryReferenceLink,
                 # mirror it and then express it in mirroredLink frame
                 # T is a 4x4 homogeneous matrix
                 # Get {}^simmetryReferenceLink COM
@@ -1093,13 +1140,13 @@ class Converter:
                 simmetryRefenceLink_COM[1] = off[1]
                 simmetryRefenceLink_COM[2] = off[2]
                 simmetryRefenceLink_COM[3] = 1;
- 
-                # Get {}^mirroredLink T_simmetryReferenceLink  
+
+                # Get {}^mirroredLink T_simmetryReferenceLink
                 mirroredLink_T_simmetryReferenceLink = self.tfman.getHomTransform("X" + mirroredLink, "X" + simmetryReferenceLink)
 
-                # xz simmetry : y --> -y 
+                # xz simmetry : y --> -y
                 simmetryRefenceLink_COM[1] = -simmetryRefenceLink_COM[1];
- 
+
                 # {}^mirroredLink COM = {}^mirroredLink T_simmetryReferenceLink {}^simmetryReferenceLink COM
                 mirroredLink_COM = numpy.dot(mirroredLink_T_simmetryReferenceLink,simmetryRefenceLink_COM);
 
@@ -1107,15 +1154,15 @@ class Converter:
                 off[0] = mirroredLink_COM[0];
                 off[1] = mirroredLink_COM[1];
                 off[2] = mirroredLink_COM[2];
-                
-                # Inertia: the inertia both in SimMechanics XML and URDF  
-                # is expressed in the COM, so we have only to ensure that the 
-                # change the orientation of inertia to match the one of the 
-                # simmetryReferenceLink and change the sign of 
+
+                # Inertia: the inertia both in SimMechanics XML and URDF
+                # is expressed in the COM, so we have only to ensure that the
+                # change the orientation of inertia to match the one of the
+                # simmetryReferenceLink and change the sign of
                 # relevant off diagonal elements (in xz case all the offdiagonal elements related to y)
-                # after that we can express the inertia in the frame that we prefer, for example we can leave 
+                # after that we can express the inertia in the frame that we prefer, for example we can leave
                 # it in the simmetryReferenceLink, a long as we set the right pose in the inertial tag
-                
+
                 # Get {}^originalLinkInertiaFrame R_simmetryReferenceLink
                 originalLinkInertiaFrame_T_simmetryReferenceLink = self.tfman.getHomTransform(originalLink+"CG", "X" + simmetryReferenceLink)
                 originalLinkInertiaFrame_R_simmetryReferenceLink = originalLinkInertiaFrame_T_simmetryReferenceLink[0:3,0:3];
@@ -1124,7 +1171,7 @@ class Converter:
                 simmetryReferenceLink_T_originalLinkInertiaFrame = self.tfman.getHomTransform("X" + simmetryReferenceLink, originalLink+"CG")
                 simmetryReferenceLink_R_originalLinkInertiaFrame = simmetryReferenceLink_T_originalLinkInertiaFrame[0:3,0:3];
 
-                # Get  {}^originalLinkInertiaFrame Inertia3D 
+                # Get  {}^originalLinkInertiaFrame Inertia3D
                 matrix = getlist(originalLinkDict["inertia"])
 
                 units = originalLinkDict['inertiaUnits']
@@ -1141,7 +1188,7 @@ class Converter:
                 simmetryReferenceLink_Inertia = numpy.dot(simmetryReferenceLink_R_originalLinkInertiaFrame,numpy.dot(originalLinkInertiaFrame_Inertia,originalLinkInertiaFrame_R_simmetryReferenceLink))
 
 
-                assert(self.isValidInertiaMatrix(simmetryReferenceLink_Inertia,1e-3)); 
+                assert(self.isValidInertiaMatrix(simmetryReferenceLink_Inertia,1e-3));
 
                 # xz simmetry: Ixy --> -Ixy , Iyz ---> -Iyz
                 simmetryReferenceLink_Inertia[0,1] = -simmetryReferenceLink_Inertia[0,1];
@@ -1149,7 +1196,7 @@ class Converter:
                 simmetryReferenceLink_Inertia[1,2] = -simmetryReferenceLink_Inertia[1,2];
                 simmetryReferenceLink_Inertia[2,1] = -simmetryReferenceLink_Inertia[2,1];
 
-                assert(self.isValidInertiaMatrix(simmetryReferenceLink_Inertia,1e-3)); 
+                assert(self.isValidInertiaMatrix(simmetryReferenceLink_Inertia,1e-3));
 
                 # The inertia orientation is now the one of R_simmetryReferenceLink, so we have to put in urdf pose  {}^mirroredLink R_simmetryReferenceLink
                 (off_dummy,rot) = self.tfman.get("X" + mirroredLink, "X" + simmetryReferenceLink)
@@ -1167,7 +1214,7 @@ class Converter:
                 inertial.inertia.iyy = simmetryReferenceLink_Inertia[1,1];
                 inertial.inertia.iyz = simmetryReferenceLink_Inertia[1,2]
                 inertial.inertia.izz = simmetryReferenceLink_Inertia[2,2];
- 
+
                 # Save COM and Inertia orientation
                 inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
 
@@ -1196,10 +1243,10 @@ class Converter:
         self.colormap[s] = color
         self.colorindex = (self.colorindex + 1) % len(COLORS)
         return color
-        
+
     def createGeometry(self, geometricShape):
         """ Gets an object containing the data to build the geometric shape"""
-            
+
         shape = geometricShape["shape"]
         if shape == "sphere":
             radius = geometricShape["radius"]
@@ -1212,7 +1259,7 @@ class Converter:
             radius = geometricShape["radius"]
             length = geometricShape["length"]
             geometry = urdf_parser_py.urdf.Cylinder(radius, length)
-            
+
         return geometry
 
     def outputJoint(self, id, parentname):
@@ -1264,16 +1311,16 @@ class Converter:
                        else:
                            limits.lower = math.radians(float(conf.get("lower_limit")))
                    if "velocity_limit" in conf:
-                       limits.velocity = float(conf.get("velocity_limit"))  
+                       limits.velocity = float(conf.get("velocity_limit"))
                    else:
-                       limits.velocity = self.velocity_limit_fallback                  
+                       limits.velocity = self.velocity_limit_fallback
                    if "effort_limit" in conf:
                        limits.effort = float(conf.get("effort_limit"))
                    else:
                        limits.effort = self.effort_limit_fallback
                    #if adding limits, switching the joint type to revolute
-                   if( jtype == "continuous" and 
-                      conf.get("upper_limit") != "" and 
+                   if( jtype == "continuous" and
+                      conf.get("upper_limit") != "" and
                       conf.get("lower_limit") != ""):
                        jtype = "revolute";
             else:
@@ -1286,14 +1333,14 @@ class Converter:
                     limits.velocity = 10000
                     limits.effort   = 10000
 
-           
-                       
-        
+
+
+
 
 
         # add axis: the axis is expressed in the axisReferenceFrame (normally WORLD)
         #           while in the URDF we have to express it in the child frame
-        #           we have then to properly rotate it. 
+        #           we have then to properly rotate it.
         if 'axis' in jointdict and jtype != 'fixed':
             axis_string = jointdict['axis'].replace(',', ' ')
 
@@ -1306,7 +1353,7 @@ class Converter:
 
             axis_np = numpy.array(axis)
 
- 
+
             child_H_axisReferenceFrame = self.tfman.getHomTransform("X"+cid,jointdict['axisReferenceFrame']);
 
             axis_child = numpy.dot(child_H_axisReferenceFrame[0:3,0:3],axis_np);
@@ -1319,8 +1366,8 @@ class Converter:
         (off, rot) = self.tfman.get("X" + pid, "X" + cid)
         rpy = list(euler_from_quaternion(rot))
         origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
-        
-       
+
+
         #adding damping and friction (not from simmechanics but from configuration file)
         joint_damping = self.damping_fallback;
         joint_friction = self.friction_fallback;
@@ -1338,7 +1385,7 @@ class Converter:
     def getName(self, basename):
         """Return a unique name of the format
            basenameD* where D is the lowest number
-           to make the name unique (if the basename is already unique, no number will be added). 
+           to make the name unique (if the basename is already unique, no number will be added).
            If a rule for renaming basename is defined in the configuration file, the basename
            will be changed."""
         index = 0
@@ -1431,16 +1478,22 @@ class Converter:
                 ngid = jid
 
             self.makeGroup(child, ngid)
-                
+
 def addXMLBlobs(blobs, parentXML):
     if not(blobs is None):
         for blob in blobs:
-            if not( blob is None or blob is ''):
-                blob_el = lxml.etree.fromstring(blob);
-                parentXML.append(blob_el);
-            else:
-                sys.stderr.write("Warning: malformed XMLBlob for: " + parentXML.get("name") + "\n")
-                sys.stderr.write("Ingnoring it" + "\n")
+            addXMLBlob(blob, parentXML)
+
+def addXMLBlob(blob, parentXML):
+    if not(blob is None or blob is ''):
+        if type(blob) is str:
+            blob_el = lxml.etree.fromstring(blob);
+            parentXML.append(blob_el);
+        else:
+            parentXML.append(blob);
+    else:
+        sys.stderr.write("Warning: malformed XMLBlob for: " + parentXML.get("name") + "\n")
+        sys.stderr.write("Ignoring it" + "\n")
 
 def quaternion_matrix(quaternion):
     """Return homogeneous rotation matrix from quaternion.
@@ -1590,11 +1643,11 @@ def toGazeboPose(offset,quaternion):
     pose = str(offset[0]) + " " + str(offset[1]) + " " + str(offset[2]) + " " + str(rpy[0]) + " " + str(rpy[1]) + " " + str(rpy[2]);
 
     return pose;
-    
+
 def toURDFOriginXMLElement(offset,quaternion):
     """Convert an offset + quaternion to a origin URDF element"""
     origin_el = lxml.etree.Element("origin");
-    
+
     rpy = list(euler_from_quaternion(quaternion))
     origin_el.set("rpy", str(rpy[0]) + " " + str(rpy[1]) + " " + str(rpy[2]));
     origin_el.set("xyz", str(offset[0]) + " " + str(offset[1]) + " " + str(offset[2]));
@@ -1602,7 +1655,7 @@ def toURDFOriginXMLElement(offset,quaternion):
     return origin_el;
 
 class CustomTransformManager:
-    """Custom class to store several transforms between different frames. 
+    """Custom class to store several transforms between different frames.
        The object can then be queried to obtain the transform between two arbitrary frames. """
     def __init__(self):
         self.transform_map = {}
@@ -1622,7 +1675,7 @@ class CustomTransformManager:
             #check if one between parent and child is already part of the manager
             if( self.transform_map.get(parent) is not None ):
                 self.transform_map[child] = numpy.dot(self.transform_map[parent],getMatrix(offset,quaternion));
-            else: 
+            else:
                 sys.stderr.write("simmechanics_to_urdf: CustomTransformManager: impossible adding a transformation if the parent frame is not already part of the trasforma manager.\n")
                 sys.stderr.write("                      Please file an issue at https://github.com/robotology-playground/simmechanics-to-urdf/issues/new .\n");
                 assert(False);
@@ -1648,18 +1701,18 @@ class CustomTransformManager:
         else:
             return_matrix = numpy.dot(Invert4x4Matrix(self.transform_map[parent]),self.transform_map[child]);
         return return_matrix
-          
- 
+
+
 class URDFSensorsGenerator:
    """ Generator for URDF sensors using iDynTree URDF dialect,
-    
+
        See https://github.com/robotology/idyntree/blob/master/doc/model_loading.md .
    """
-    
+
    def __init__(self):
        self.dummy = ""
-   
-   def getURDFForceTorque(self, jointName, sensorName, directionChildToParent): 
+
+   def getURDFForceTorque(self, jointName, sensorName, directionChildToParent):
        sensor_el = lxml.etree.Element("sensor")
        sensor_el.set("name",sensorName);
        sensor_el.set("type","force_torque");
@@ -1667,7 +1720,7 @@ class URDFSensorsGenerator:
        parent_el.set("joint",jointName);
        force_torque_el = lxml.etree.SubElement(sensor_el,"force_torque")
        frame_el = lxml.etree.SubElement(force_torque_el,"frame")
-       frame_el.text = "child";  
+       frame_el.text = "child";
        measure_direction_el = lxml.etree.SubElement(force_torque_el,"measure_direction")
        if( directionChildToParent ):
            measure_direction_el.text = "child_to_parent"
@@ -1683,15 +1736,15 @@ class URDFSensorsGenerator:
        parent_el = lxml.etree.SubElement(sensor_el,"parent");
        parent_el.set("link",linkName);
        sensor_el.append(origin_el);
-       
+
        return sensor_el;
 
 
 class URDFGazeboSensorsGenerator:
    def __init__(self):
        self.dummy = ""
-   
-   def getURDFForceTorque(self, jointName, sensorName, directionChildToParent, updateRate=100): 
+
+   def getURDFForceTorque(self, jointName, sensorName, directionChildToParent, updateRate=100):
        gazebo_el = lxml.etree.Element("gazebo" , reference=jointName)
        sensor_el = lxml.etree.SubElement(gazebo_el,"sensor")
        sensor_el.set("name",sensorName);
@@ -1702,7 +1755,7 @@ class URDFGazeboSensorsGenerator:
        sensor_el.set("type","force_torque");
        force_torque_el = lxml.etree.SubElement(sensor_el,"force_torque")
        frame_el = lxml.etree.SubElement(force_torque_el,"frame")
-       frame_el.text = "child";  
+       frame_el.text = "child";
        measure_direction_el = lxml.etree.SubElement(force_torque_el,"measure_direction")
        if( directionChildToParent ):
            measure_direction_el.text = "child_to_parent"
@@ -1721,9 +1774,9 @@ class URDFGazeboSensorsGenerator:
        update_rate_el = lxml.etree.SubElement(sensor_el,"update_rate")
        update_rate_el.text = str(updateRate);
        sensor_el.set("type", sensorType);
-       pose_el = lxml.etree.SubElement(sensor_el,"pose"); 
+       pose_el = lxml.etree.SubElement(sensor_el,"pose");
        pose_el.text = pose;
-       
+
        addXMLBlobs(sensorBlobs, sensor_el)
 
        return gazebo_el;
@@ -1733,7 +1786,7 @@ def main():
     parser = argparse.ArgumentParser(description='Convert (first generation) SimMechanics XML files to URDF')
     parser.add_argument('filename', nargs='?', help='input SimMechanics (first generation) xml file')
     parser.add_argument('--csv-joints', dest='csv_joints_config', nargs='?', action='store', help='CSV joints configuration file (for options of single joints)')
-    parser.add_argument('--yaml', dest='yaml_config', nargs='?', action='store', help='YAML configuration file (for global options)')    
+    parser.add_argument('--yaml', dest='yaml_config', nargs='?', action='store', help='YAML configuration file (for global options)')
     parser.add_argument('--output', dest='mode', nargs='?', action='store', default='xml', help='output mode, possible options are xml (URDF output, default), graph (DOT output) or none')
     parser.add_argument('--outputfile', dest='outputfile_name', nargs='?', action='store', help='output file, use to save the output to a file (if not given the output is printed in the terminal)')
 
@@ -1759,4 +1812,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-
