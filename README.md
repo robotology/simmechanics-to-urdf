@@ -14,6 +14,7 @@ Based on the [original version](http://wiki.ros.org/simmechanics_to_urdf) by [Da
 - [lxml](http://lxml.de/)
 - [PyYAML](http://pyyaml.org/)
 - [NumPy](http://www.numpy.org/)
+- [catkin_pkg](http://wiki.ros.org/catkin_pkg)
 - [urdf_parser_py](https://github.com/ros/urdf_parser_py)
 
 ## Installation
@@ -29,14 +30,14 @@ To install the dependencies, a easy way is to have installed `pip`, that is inst
 if you use the python version provided by homebrew. 
 If you have `pip` installed you can get all necessary dependencies with:
 ~~~
-pip install lxml numpy pyyaml 
+pip install lxml numpy pyyaml catkin_pkg
 ~~~
 
 #### Debian/Ubuntu
 ##### Install dependencies
 Install the necessary dependencies with apt-get:
 ~~~
-sudo apt-get install python-lxml python-yaml python-numpy python-setuptools
+sudo apt-get install python-lxml python-yaml python-numpy python-setuptools python-catkin-pkg
 ~~~
 
 You can install `urdf_parser_py` from its git repository:
