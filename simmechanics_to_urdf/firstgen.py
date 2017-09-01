@@ -796,9 +796,7 @@ class Converter:
             # USERADDED frame as the linkFrame. Given that the URDF enforces
             # the link frame origin to lay on the axis of parent joint, the USERADDED
             # frame is used unmodified only if its origin lays on joint axis.
-            # Otherwise the rotation of the frame will be left unchanged, and a new origin
-            # will be found as the projection of the USERADDED frame origin to the axis (i.e.
-            # the point on the axis closest to the USERADDED frame origin).
+            # If the USERADDED frame origin doesn't lay on the joint axis, an exception is thrown.
             if( jointIsNotFixed and not (parentid == "GROUND")  ):
                 if( self.linkFramesMap.get(link['uid']) is None ):
                     # no frame redefinition
@@ -821,10 +819,14 @@ class Converter:
 
                     axis_normalized = axis_np/numpy.linalg.norm(axis_np);
 
-                    # Projection math: project the frame origin on the joint axis
-                    new_link_frame_off_projected = numpy.dot(new_link_frame_off_np-joint_offset_np,axis_normalized)*axis_normalized+joint_offset_np;
+                    # Check that the USERADDED frame origin lays on the joint axis
+                    joint_frame_to_new_link_frame_vector = new_link_frame_off_np-joint_offset_np;
+                    if (numpy.cross(joint_frame_to_new_link_frame_vector, axis_normalized) > _EPS):
+                        raise Exception('The frame: ' , self.linkFramesMap[link['uid']]["frameName"] , ' doesn t lay on the joint axis.')
 
-                    self.tfman.add(new_link_frame_off_projected, new_link_frame_rot, WORLD, "X" + id)
+                    self.tfman.add(new_link_frame_off, new_link_frame_rot, WORLD, "X" + id)
+                    
+                    # TODO Rotate joint axis
 
             else:
                 # If the parent joint is fixed, the URDF format does not
