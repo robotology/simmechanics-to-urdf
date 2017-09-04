@@ -842,8 +842,8 @@ class Converter:
                     axis_normalized_homogeneous = numpy.append(axis_normalized, 1.0);
                     new_axis_homogeneous = zero(change_of_base_matrix.dot(axis_normalized_homogeneous));
                     new_axis = [float(axis_el / new_axis_homogeneous[3]) for axis_el in new_axis_homogeneous[:3]];
-                    test2 = numpy.array2string(one(numpy.array(new_axis)), formatter={'float_kind': lambda x: "%.1f" % x}, separator=',')
-                    jointdict['axis'] = test2.replace('[','').replace(']','');
+                    new_axis_string = numpy.array2string(one(numpy.array(new_axis)), formatter={'float_kind': lambda x: "%.1f" % x}, separator=',')
+                    jointdict['axis'] = new_axis_string.replace('[','').replace(']','');
 
             else:
                 # If the parent joint is fixed, the URDF format does not
