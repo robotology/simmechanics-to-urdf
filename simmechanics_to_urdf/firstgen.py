@@ -832,19 +832,6 @@ class Converter:
 
                     self.tfman.add(new_link_frame_off, new_link_frame_rot, WORLD, "X" + id)
 
-                    # The joint axis is defined with respect to the link frame.
-                    # Since we changed the link frame, we have to update the joint axis accordingly.
-                    joint_rot_matrix = quaternion_matrix(joint_rot);
-                    new_link_frame_rot_matrix = quaternion_matrix(new_link_frame_rot);
-                    new_link_frame_rot_matrix_inv = Invert4x4Matrix(new_link_frame_rot_matrix)
-                    change_of_base_matrix = joint_rot_matrix.dot(new_link_frame_rot_matrix_inv);
-
-                    axis_normalized_homogeneous = numpy.append(axis_normalized, 1.0);
-                    new_axis_homogeneous = zero(change_of_base_matrix.dot(axis_normalized_homogeneous));
-                    new_axis = [float(axis_el / new_axis_homogeneous[3]) for axis_el in new_axis_homogeneous[:3]];
-                    new_axis_string = numpy.array2string(one(numpy.array(new_axis)), formatter={'float_kind': lambda x: "%.1f" % x}, separator=',')
-                    jointdict['axis'] = new_axis_string.replace('[','').replace(']','');
-
             else:
                 # If the parent joint is fixed, the URDF format does not
                 # default we use enforce any constraint on the frame placement
