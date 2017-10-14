@@ -1324,11 +1324,11 @@ class Converter:
                             limits.lower = float(conf.get("lower_limit"))
                         else:
                             limits.lower = math.radians(float(conf.get("lower_limit")))
-                    if "velocity_limit" in conf:
+                    if ("velocity_limit" in conf and conf.get("velocity_limit") != ""):
                         limits.velocity = float(conf.get("velocity_limit"))
                     else:
                         limits.velocity = self.velocity_limit_fallback
-                    if "effort_limit" in conf:
+                    if ("effort_limit" in conf  and conf.get("effort_limit") != ""):
                         limits.effort = float(conf.get("effort_limit"))
                     else:
                         limits.effort = self.effort_limit_fallback
