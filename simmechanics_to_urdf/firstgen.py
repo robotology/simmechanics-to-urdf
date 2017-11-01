@@ -211,10 +211,12 @@ class Converter:
                 sensorName = referenceJoint
             else:
                 sensorName = ftSens["sensorName"];
+            sensorBlobs = ftSens.get("sensorBlobs");
 
             # Add sensor in Gazebo format
             ft_gazebo_el = generatorGazeboSensors.getURDFForceTorque(referenceJoint, sensorName,
-                                                                     ftSens["directionChildToParent"])
+                                                                     ftSens["directionChildToParent"],
+                                                                     sensorBlobs)
             self.urdf_xml.append(ft_gazebo_el);
 
             # Add sensor in URDF format
@@ -1775,7 +1777,7 @@ class URDFGazeboSensorsGenerator:
     def __init__(self):
         self.dummy = ""
 
-    def getURDFForceTorque(self, jointName, sensorName, directionChildToParent, updateRate=100):
+    def getURDFForceTorque(self, jointName, sensorName, directionChildToParent, sensorBlobs, updateRate=100):
         gazebo_el = lxml.etree.Element("gazebo", reference=jointName)
         sensor_el = lxml.etree.SubElement(gazebo_el, "sensor")
         sensor_el.set("name", sensorName);
@@ -1792,6 +1794,8 @@ class URDFGazeboSensorsGenerator:
             measure_direction_el.text = "child_to_parent"
         else:
             measure_direction_el.text = "parent_to_child"
+
+        addXMLBlobs(sensorBlobs, sensor_el)
 
         return gazebo_el;
 
