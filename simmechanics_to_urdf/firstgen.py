@@ -176,6 +176,7 @@ class Converter:
             self.generateXML()
             addXMLBlobs(self.XMLBlobs, self.urdf_xml)
             self.addSensors()
+            self.addOrigin()
             self.outputString = lxml.etree.tostring(self.urdf_xml, pretty_print=True)
 
         if mode == "graph":
@@ -270,6 +271,15 @@ class Converter:
             sensor_el = generatorURDFSensors.getURDFSensor(sensorLink, sensorType, sensorName, urdf_origin_el)
             self.urdf_xml.append(sensor_el);
 
+    def addOrigin(self):
+        # Convert the origin element to Gazebo format (pose tag)
+        gazebo_origin_el = lxml.etree.Element("gazebo", None);
+        pose = lxml.etree.SubElement(gazebo_origin_el,"pose");
+        pose.text = toGazeboPoseFromEuler(self.originXYZ, self.originRPY);
+
+        # Add it to the URDF
+        self.urdf_xml.append(gazebo_origin_el);
+
     def parseYAMLConfig(self, configFile):
         """Parse the YAML configuration File, if it exists.
            Set the fields the default if the config does
@@ -299,6 +309,9 @@ class Converter:
             assert (False)
 
         self.name = configuration.get('robotName', None)
+
+        self.originXYZ = configuration.get('originXYZ', [0.0,0.0,0.0])
+        self.originRPY = configuration.get('originRPY', [0.0,0.0,0.0])
 
         self.forcelowercase = configuration.get('forcelowercase', True)
 
@@ -1667,17 +1680,27 @@ def getMatrix(offset, quaternion):
 def toGazeboPose(offset, quaternion):
     """Convert an offset + quaternion to a 6x1 Gazebo pose string"""
     rpy = list(euler_from_quaternion(quaternion))
-    pose = str(offset[0]) + " " + str(offset[1]) + " " + str(offset[2]) + " " + str(rpy[0]) + " " + str(
-        rpy[1]) + " " + str(rpy[2]);
+    pose = toGazeboPoseFromEuler(offset, rpy);
 
     return pose;
 
+def toGazeboPoseFromEuler(offset, rpy):
+    """Convert an offset + Euler angles to a 6x1 Gazebo pose string"""
+    pose = str(offset[0]) + " " + str(offset[1]) + " " + str(offset[2]) + " " + str(rpy[0]) + " " + str(rpy[1]) + " " + str(rpy[2]);
+                                                                                                        
+    return pose;
 
 def toURDFOriginXMLElement(offset, quaternion):
     """Convert an offset + quaternion to a origin URDF element"""
+    rpy = list(euler_from_quaternion(quaternion));
+    origin_el = toURDFOriginEulerXMLElement(offset,rpy);
+
+    return origin_el;
+
+def toURDFOriginEulerXMLElement(offset, rpy):
+    """Convert an offset + Euler angles orientation to a origin URDF element"""
     origin_el = lxml.etree.Element("origin");
 
-    rpy = list(euler_from_quaternion(quaternion))
     origin_el.set("rpy", str(rpy[0]) + " " + str(rpy[1]) + " " + str(rpy[2]));
     origin_el.set("xyz", str(offset[0]) + " " + str(offset[1]) + " " + str(offset[2]));
 
