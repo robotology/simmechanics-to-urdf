@@ -40,7 +40,7 @@ GEOMETRIC_SHAPES = {
     'sphere': ['origin', 'radius']}
 
 # epsilon for testing whether a number is close to zero
-EPS = 2e-7
+_EPS = 2e-7
 
 # axis sequences for Euler angles
 _NEXT_AXIS = [1, 2, 0, 1]
