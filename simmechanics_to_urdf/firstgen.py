@@ -40,7 +40,7 @@ GEOMETRIC_SHAPES = {
     'sphere': ['origin', 'radius']}
 
 # epsilon for testing whether a number is close to zero
-_EPS = numpy.finfo(float).eps * 4.0
+EPS = 2e-7
 
 # axis sequences for Euler angles
 _NEXT_AXIS = [1, 2, 0, 1]
