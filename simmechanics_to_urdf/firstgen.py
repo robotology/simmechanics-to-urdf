@@ -40,7 +40,7 @@ GEOMETRIC_SHAPES = {
     'sphere': ['origin', 'radius']}
 
 # epsilon for testing whether a number is close to zero
-_EPS = 2e-7
+_EPS = numpy.finfo(float).eps * 4.0
 
 # axis sequences for Euler angles
 _NEXT_AXIS = [1, 2, 0, 1]
@@ -312,6 +312,11 @@ class Converter:
 
         self.originXYZ = configuration.get('originXYZ', [0.0,0.0,0.0])
         self.originRPY = configuration.get('originRPY', [0.0,0.0,0.0])
+
+        epsilon = configuration.get('epsilon', None)
+        if (epsilon is not None):
+            global _EPS
+            _EPS = float(epsilon)
 
         self.forcelowercase = configuration.get('forcelowercase', True)
 
