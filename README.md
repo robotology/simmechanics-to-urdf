@@ -103,7 +103,7 @@ The parameter accepted by the script are documented in the following.
 ##### Algorithm Parameters
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:------:|:-------------:|:-------------:|
-| `epsilon`        | Float | Machine *eps* | Set a custom value for testing whether a number is close to zero |
+| `epsilon`        | Float | 4*(Machine *eps*) | Set a custom value for testing whether a number is close to zero |
 
 ##### Frame Parameters 
 | Attribute name   | Type   | Default Value | Description  |
