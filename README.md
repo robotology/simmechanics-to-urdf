@@ -95,8 +95,15 @@ The parameter accepted by the script are documented in the following.
 
 ##### Root Parameters
 | Attribute name   | Type   | Default Value | Description  |
-|:----------------:|:---------:|:------------:|:-------------:|
-| `root`             | String  | First body in the file | Changes the root body of the tree |
+|:----------------:|:------:|:------------:|:-------------:|
+| `root`           | String | First body in the file | Changes the root body of the tree |
+| `originXYZ`      |  List  | empty | Changes the position of the root body |
+| `originRPY`      |  List  | empty | Changes the orientation of the root body |
+
+##### Algorithm Parameters
+| Attribute name   | Type   | Default Value | Description  |
+|:----------------:|:------:|:-------------:|:-------------:|
+| `epsilon`        | Float | Machine *eps* | Set a custom value for testing whether a number is close to zero |
 
 ##### Frame Parameters 
 | Attribute name   | Type   | Default Value | Description  |

@@ -313,6 +313,11 @@ class Converter:
         self.originXYZ = configuration.get('originXYZ', [0.0,0.0,0.0])
         self.originRPY = configuration.get('originRPY', [0.0,0.0,0.0])
 
+        epsilon = configuration.get('epsilon', None)
+        if (epsilon is not None):
+            global _EPS
+            _EPS = float(epsilon)
+
         self.forcelowercase = configuration.get('forcelowercase', True)
 
         self.stringToRemoveFromMeshFileName = configuration.get('stringToRemoveFromMeshFileName', False)
