@@ -136,7 +136,6 @@ class Converter:
         self.names = {}
         self.colormap = {}
         self.colorindex = 0
-        self.usedcolors = {}
         self.ref2nameMap = {}
         self.realRootLink = None
         self.outputString = "".encode('UTF-8')
@@ -1033,11 +1032,7 @@ class Converter:
                 (cname, (r, g, b, a)) = self.getColor(linkdict['name'])
 
             visual.material.name = cname
-
-            # If color has already been output, only output name
-            if not cname in self.usedcolors:
-                visual.material.color = urdf_parser_py.urdf.Color(r, g, b, a)
-                self.usedcolors[cname] = True
+            visual.material.color = urdf_parser_py.urdf.Color(r, g, b, a)
 
             # Create a new gazebo blob for applying colors in the sdf
             gzblobmaterial_el = lxml.etree.Element("gazebo", reference=id)
