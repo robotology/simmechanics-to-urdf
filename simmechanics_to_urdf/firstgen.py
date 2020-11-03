@@ -59,6 +59,68 @@ _AXES2TUPLE = {
 _TUPLE2AXES = dict((v, k) for k, v in _AXES2TUPLE.items())
 
 
+def euler_matrix(ai, aj, ak, axes='sxyz'):
+    """Return homogeneous rotation matrix from Euler angles and axis sequence.
+
+    ai, aj, ak : Euler's roll, pitch and yaw angles
+    axes : One of 24 axis sequences as string or encoded tuple
+
+    >>> R = euler_matrix(1, 2, 3, 'syxz')
+    >>> numpy.allclose(numpy.sum(R[0]), -1.34786452)
+    True
+    >>> R = euler_matrix(1, 2, 3, (0, 1, 0, 1))
+    >>> numpy.allclose(numpy.sum(R[0]), -0.383436184)
+    True
+    >>> ai, aj, ak = (4*math.pi) * (numpy.random.random(3) - 0.5)
+    >>> for axes in _AXES2TUPLE.keys():
+    ...    R = euler_matrix(ai, aj, ak, axes)
+    >>> for axes in _TUPLE2AXES.keys():
+    ...    R = euler_matrix(ai, aj, ak, axes)
+
+    """
+    try:
+        firstaxis, parity, repetition, frame = _AXES2TUPLE[axes]
+    except (AttributeError, KeyError):
+        _TUPLE2AXES[axes]  # noqa: validation
+        firstaxis, parity, repetition, frame = axes
+
+    i = firstaxis
+    j = _NEXT_AXIS[i+parity]
+    k = _NEXT_AXIS[i-parity+1]
+
+    if frame:
+        ai, ak = ak, ai
+    if parity:
+        ai, aj, ak = -ai, -aj, -ak
+
+    si, sj, sk = math.sin(ai), math.sin(aj), math.sin(ak)
+    ci, cj, ck = math.cos(ai), math.cos(aj), math.cos(ak)
+    cc, cs = ci*ck, ci*sk
+    sc, ss = si*ck, si*sk
+
+    M = numpy.identity(4)
+    if repetition:
+        M[i, i] = cj
+        M[i, j] = sj*si
+        M[i, k] = sj*ci
+        M[j, i] = sj*sk
+        M[j, j] = -cj*ss+cc
+        M[j, k] = -cj*cs-sc
+        M[k, i] = -sj*ck
+        M[k, j] = cj*sc+cs
+        M[k, k] = cj*cc-ss
+    else:
+        M[i, i] = cj*ck
+        M[i, j] = sj*sc-cs
+        M[i, k] = sj*cc+ss
+        M[j, i] = cj*sk
+        M[j, j] = sj*ss+cc
+        M[j, k] = sj*cs-sc
+        M[k, i] = -sj
+        M[k, j] = cj*si
+        M[k, k] = cj*ci
+    return M
+
 def euler_from_matrix(matrix, axes='sxyz'):
     """Return Euler angles from rotation matrix for specified axis sequence.
 
@@ -249,11 +311,12 @@ class Converter:
                 sensor_frame_fid = self.linkNameDisplayName2fid[(referenceLink, frameName)];
                 (offset, rot) = self.tfman.get("X" + sensorLink, sensor_frame_fid)
 
+
             if (sensorName is None):
                 sensorName = sensorLink + "_" + frameName;
-
             # Add sensors in Gazebo format
             pose = toGazeboPose(offset, rot);
+
 
             # sys.stderr.write("Processing link " + link['uid'] + "\n")
 
@@ -602,7 +665,15 @@ class Converter:
                     if (map_key in self.exportedFramesMap.keys()):
                         if ("exportedFrameName" in self.exportedFramesMap[map_key].keys()):
                             useradded_frame_name = self.exportedFramesMap[map_key]["exportedFrameName"];
+                        if ("additionalTransformation" in self.exportedFramesMap[map_key].keys()):
+                            addTransform = self.exportedFramesMap[map_key]["additionalTransformation"];
 
+                            if (addTransform is not None):
+                                assert(len(addTransform) is 6)
+                                sensorOriginal_R_sensorModifed = euler_matrix(addTransform[3], addTransform[4], addTransform[5])
+                                link_R_sensorOriginal = quaternion_matrix(quat)
+                                offset = numpy.add(offset, numpy.matmul(link_R_sensorOriginal[0:3,0:3], addTransform[0:3]))
+                                quat = quaternion_from_matrix(numpy.matmul(link_R_sensorOriginal, sensorOriginal_R_sensorModifed))
                     fid = useradded_frame_name + "CS1"
                     extraframe = {'parentlink': parent_link, 'framename': useradded_frame_name}
                     self.extraframes = self.extraframes + [extraframe]
