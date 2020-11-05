@@ -89,7 +89,7 @@ The parameter accepted by the script are documented in the following.
 ##### Naming Parameters 
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
-| `robotName`     | String     | model name set in the file PhysicalModelingXMLFile | Used for setting the model name, i.e. the parameter `<robot name="...">` in the `URDF` model file. | 
+| `robotName`     | String     | model name set in the file PhysicalModelingXMLFile | Used for setting the model name, i.e. the parameter `<robot name="...">` in the `URDF` model file. |
 | `rename`        | Map  | {} (Empty Map) | Structure mapping the SimMechanics XML names to the desired URDF names.  |
 
 
@@ -108,15 +108,15 @@ The parameter accepted by the script are documented in the following.
 ##### Frame Parameters 
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
-| `linkFrames`       | Array | empty | Structure mapping the link names to the displayName of their desired frame. Unfortunatly in URDF the link frame origin placement is not free, but it is constrained to be placed on the parent joint axis, hence this option is for now reserved to the root link and to links connected to their parent by a fixed joint | 
+| `linkFrames`       | Array | empty | Structure mapping the link names to the displayName of their desired frame. Unfortunatly in URDF the link frame origin placement is not free, but it is constrained to be placed on the parent joint axis, hence this option is for now reserved to the root link and to links connected to their parent by a fixed joint |
 | `exportAllUseradded` |  Boolean | False | If true, export all SimMechanics frame tagged with `USERADDED` in the output URDF as fake links i.e. fake link with zero mass connected to a link with a fixed joint..  |
 | `exportedFrames` | Array | empty | Array of `displayName` of UserAdded frames to export. This are exported as fixed URDF frames, i.e. fake link with zero mass connected to a link with a fixed joint. |
 
 ###### Link Frames Parameters  (keys of elements of `linkFrames`)
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:-----------:|:-------------:|
-| `linkName`       | String |  Mandatory  | name of the link for which we want to set the frame | 
-| `frameName`      | String | Mandatory  | `displayName` of the frame that we want to use as link frame. This frame should be attached to the `frameReferenceLink` link. The default value for `frameReferenceLink` is `linkName` | 
+| `linkName`       | String |  Mandatory  | name of the link for which we want to set the frame |
+| `frameName`      | String | Mandatory  | `displayName` of the frame that we want to use as link frame. This frame should be attached to the `frameReferenceLink` link. The default value for `frameReferenceLink` is `linkName` |
 | `frameReferenceLink`  | String  |  empty      | `frameReferenceLink` at which the frame is attached. If `frameReferenceLink` is empty, it will default to `linkName` |
 
 
@@ -124,9 +124,10 @@ The parameter accepted by the script are documented in the following.
 ###### Exported Frame Parameters (keys of elements of `exportedFrames`)
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
-| `frameName`       | String |  Mandatory  | `displayName` of the frame in which the sensor measure is expressed. The selected frame should be attached to the `referenceLink` link, but `referenceLink` can be be omitted if the frameName is unique in the model.   | 
+| `frameName`       | String |  Mandatory  | `displayName` of the frame in which the sensor measure is expressed. The selected frame should be attached to the `referenceLink` link, but `referenceLink` can be be omitted if the frameName is unique in the model.   |
 | `frameReferenceLink`  | String  |  empty      | `frameReferenceLink` at which the frame is attached. If `referenceLink` is empty, it will be selected the first USERADDED frame with the specified `frameName` |
-| `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportedFrames` option | 
+| `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportedFrames` option |
+| `additionalTransformation` | List | Empty | Additional transformation applied to the exported frame, it is expressed as [x, y, z, r, p, y] according to the semantics and units of the [SDF convention](http://sdformat.org/tutorials?tut=specify_pose&cat=specification&) for expressing poses. If the unmodified transformation of the additionalFrame is indicated as linkFrame_H_additionalFrameOld, this parameter specifies the additionalFrameOld_H_additionalFrame transform, and the final transform exported in the URDF is computed as linkFrame_H_additionalFrame = linkFrame_H_additionalFrameOld*additionalFrameOld_H_additionalFrame . If not specified it is assume to be the `[0, 0, 0, 0, 0, 0]` element and the specified frame is exported in the URDF unmodified. |
 
 ##### Mesh Parameters 
 | Attribute name   | Type   | Default Value | Description  |
@@ -141,7 +142,7 @@ The parameter accepted by the script are documented in the following.
 ###### Assigned collision geometries (keys of elements of `assignedCollisionGeometry`)
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
-| `linkName`       | String |  Mandatory  | Name of the link for which the collision geometry is specified. | 
+| `linkName`       | String |  Mandatory  | Name of the link for which the collision geometry is specified. |
 | `geometricShape`  | Dictionary  |  Mandatory  | This dictionary contains the parameters used to define the type and the position of the geometric shape. In particular we have: <ul><li>shape: geometric shape type. Supported "box", "cylinder", "sphere". </li><li>type dependent geometric shape parameters. Refer to [SDF Geometry](http://sdformat.org/spec?elem=geometry). </li><li>origin: String defining the pose of the geometric shape with respect to the `linkFrame`. </li></ul> |
 
 ~~~
@@ -163,18 +164,18 @@ assignedCollisionGeometry:
 ##### Inertia parameters
 Parameters related to the inertia parameters of a link
 
-| Attribute name | Type | Default Value | Description | 
+| Attribute name | Type | Default Value | Description |
 |:----------------:|:---------:|:------------:|:-------------:|
-| `assignedMasses` | Map  | {} (Empty Map) | If a link is in this map, the mass found in the SimMechanics file is substituted with the one passed through this map. Furthermore, the inertia matrix present in the SimMechanics file is scaled accounting for the new mass (i.e. multiplied by new_mass/old_mass). The mass is expressed in Kg. | 
-| `assignedInertias`    | Array | empty | Structure for redefining the inertia tensor (at the COM) for a given link.  | 
+| `assignedMasses` | Map  | {} (Empty Map) | If a link is in this map, the mass found in the SimMechanics file is substituted with the one passed through this map. Furthermore, the inertia matrix present in the SimMechanics file is scaled accounting for the new mass (i.e. multiplied by new_mass/old_mass). The mass is expressed in Kg. |
+| `assignedInertias`    | Array | empty | Structure for redefining the inertia tensor (at the COM) for a given link.  |
 
 ###### Assigned Inertias parameters (elements of `assignedInertias` parameters)
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:-----------:|:-------------:|
-| `linkName`       | String |  Mandatory  | name of the link for which we want to set the frame | 
-| `xx`      | String | empty  | If defined, change the Ixx value of the inertia matrix of the link. Unit of measure: Kg*m^2 . | 
-| `yy`      | String | empty  | If defined, change the Iyy value of the inertia matrix of the link. Unit of measure: Kg*m^2 . | 
-| `zz`      | String | empty  | If defined, change the Izz value of the inertia matrix of the link. Unit of measure: Kg*m^2 . | 
+| `linkName`       | String |  Mandatory  | name of the link for which we want to set the frame |
+| `xx`      | String | empty  | If defined, change the Ixx value of the inertia matrix of the link. Unit of measure: Kg*m^2 . |
+| `yy`      | String | empty  | If defined, change the Iyy value of the inertia matrix of the link. Unit of measure: Kg*m^2 . |
+| `zz`      | String | empty  | If defined, change the Izz value of the inertia matrix of the link. Unit of measure: Kg*m^2 . |
 
 ~~~
 assignedMasses: 
@@ -207,11 +208,11 @@ this script will output two different elements for each sensor:
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
 | `jointName` | String  |  empty      | Name of the Joint for which this sensor measure the ForceTorque. |
-| `directionChildToParent` | Bool | True | True if the sensor measures the force excerted by the child on the parent, false otherwise | 
+| `directionChildToParent` | Bool | True | True if the sensor measures the force excerted by the child on the parent, false otherwise |
 | `sensorName`      | String   | jointName | Name of the sensor, to be used in the output URDF file |
-| `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame (as if the sensor frame was added to the `exportedFrames` array). | 
-| `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportFrameInURDF` option | 
-| `sensorBlobs` | String | empty | Array of strings (possibly on multiple lines) represeting complex XML blobs that will be included as child of the `<sensor>` element of type "force_torque" | 
+| `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame (as if the sensor frame was added to the `exportedFrames` array). |
+| `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportFrameInURDF` option |
+| `sensorBlobs` | String | empty | Array of strings (possibly on multiple lines) represeting complex XML blobs that will be included as child of the `<sensor>` element of type "force_torque" |
 
 Note that for now the FT sensors sensor frame is required to be coincident with child link frame, due 
 to URDF limitations. 
@@ -268,9 +269,9 @@ are listed in the following:
 
 | Attribute name | Required | Unit of Measure |   Description  |
 |:--------------:|:--------:|:----------------:|:---------------:|
-| joint_name     |  **Yes**  |      -          | Name of the joint to which the content line is referring | 
-| lower_limit    |  No      | Degrees         | `lower` attribute of the `limit` child element of the URDF `joint`. **Please note that we specify this limit here in Degrees, but in the urdf it is expressed in Radians, the script will take care of  internally converting this parameter.** |  
-| upper_limit    |  No      | Degrees         | `upper` attribute of the `limit` child element of the URDF `joint`. **Please note that we specify this limit here in Degrees, but in the urdf it is expressed in Radians, the script will take care of  internally converting this parameter.** |  
+| joint_name     |  **Yes**  |      -          | Name of the joint to which the content line is referring |
+| lower_limit    |  No      | Degrees         | `lower` attribute of the `limit` child element of the URDF `joint`. **Please note that we specify this limit here in Degrees, but in the urdf it is expressed in Radians, the script will take care of  internally converting this parameter.** |
+| upper_limit    |  No      | Degrees         | `upper` attribute of the `limit` child element of the URDF `joint`. **Please note that we specify this limit here in Degrees, but in the urdf it is expressed in Radians, the script will take care of  internally converting this parameter.** |
 | velocity_limit | No      | Radians/second    | `velocity` attribute of the `limit` child element of the URDF `joint`. |
 | effort_limit | No      |  Newton meters    | `effort` attribute of the `limit` child element of the URDF `joint`.
 | damping  | No      |  Newton meter seconds / radians    | `damping` of the `dynamics` child element of the URDF `joint`. |
