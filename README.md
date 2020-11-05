@@ -127,7 +127,7 @@ The parameter accepted by the script are documented in the following.
 | `frameName`       | String |  Mandatory  | `displayName` of the frame in which the sensor measure is expressed. The selected frame should be attached to the `referenceLink` link, but `referenceLink` can be be omitted if the frameName is unique in the model.   |
 | `frameReferenceLink`  | String  |  empty      | `frameReferenceLink` at which the frame is attached. If `referenceLink` is empty, it will be selected the first USERADDED frame with the specified `frameName` |
 | `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportedFrames` option |
-| `additionalTransformation` | List | Empty | Additional transformation applied to the exported frame, it is expressed as [x, y, z, r, p, y] |
+| `additionalTransformation` | List | Empty | Additional transformation applied to the exported frame, it is expressed as [x, y, z, r, p, y] according to the semantics and units of the [SDF convention](http://sdformat.org/tutorials?tut=specify_pose&cat=specification&) for expressing poses. If the unmodified transformation of the additionalFrame is indicated as linkFrame_H_additionalFrameOld, this parameter specifies the additionalFrameOld_H_additionalFrame transform, and the final transform exported in the URDF is computed as linkFrame_H_additionalFrame = linkFrame_H_additionalFrameOld*additionalFrameOld_H_additionalFrame . If not specified it is assume to be the `[0, 0, 0, 0, 0, 0]` element and the specified frame is exported in the URDF unmodified. |
 
 ##### Mesh Parameters 
 | Attribute name   | Type   | Default Value | Description  |
