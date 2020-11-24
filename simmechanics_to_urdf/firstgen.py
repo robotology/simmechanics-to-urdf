@@ -269,21 +269,38 @@ class Converter:
         # for the ft sensors, load the sensors as described in the YAML without further check
         for ftSens in self.forceTorqueSensors:
             referenceJoint = ftSens["jointName"];
+            frame = ftSens.get("frame");
+            frameName = ftSens.get("frameName");
             if ('sensorName' not in ftSens.keys()):
                 sensorName = referenceJoint
             else:
                 sensorName = ftSens["sensorName"];
             sensorBlobs = ftSens.get("sensorBlobs");
 
+            if (frameName is None):
+                # If frame is not specified, the sensor frame is the link frame
+                offset = [0.0, 0.0, 0.0];
+                rot = quaternion_from_matrix(numpy.identity(4));
+            else:
+                # The default referenceLink is the sensorLink itself
+                sensorJoint = self.joints[referenceJoint];
+                for key in self.linkNameDisplayName2fid.keys():
+                    # Since frameName is univoque in the map
+                    if (frameName in key):
+                        referenceLink = key[0];
+                # Get user added frame
+                sensor_frame_fid = self.linkNameDisplayName2fid[(referenceLink, frameName)];
+                (offset, rot) = self.tfman.get("X" + referenceLink, sensor_frame_fid)
+            pose = toGazeboPose(offset, rot);
             # Add sensor in Gazebo format
             ft_gazebo_el = generatorGazeboSensors.getURDFForceTorque(referenceJoint, sensorName,
                                                                      ftSens["directionChildToParent"],
-                                                                     sensorBlobs)
+                                                                     sensorBlobs, frame, pose)
             self.urdf_xml.append(ft_gazebo_el);
-
+            urdf_origin_el = toURDFOriginXMLElement(offset, rot);
             # Add sensor in URDF format
             ft_sensor_el = generatorURDFSensors.getURDFForceTorque(referenceJoint, sensorName,
-                                                                   ftSens["directionChildToParent"]);
+                                                                   ftSens["directionChildToParent"], frame, urdf_origin_el);
             self.urdf_xml.append(ft_sensor_el);
 
         # for the other sensors, we rely on pose given by a USERADDED frame
@@ -1839,7 +1856,7 @@ class URDFSensorsGenerator:
     def __init__(self):
         self.dummy = ""
 
-    def getURDFForceTorque(self, jointName, sensorName, directionChildToParent):
+    def getURDFForceTorque(self, jointName, sensorName, directionChildToParent, frame, origin_el):
         sensor_el = lxml.etree.Element("sensor")
         sensor_el.set("name", sensorName);
         sensor_el.set("type", "force_torque");
@@ -1847,13 +1864,17 @@ class URDFSensorsGenerator:
         parent_el.set("joint", jointName);
         force_torque_el = lxml.etree.SubElement(sensor_el, "force_torque")
         frame_el = lxml.etree.SubElement(force_torque_el, "frame")
-        frame_el.text = "child";
+        if (frame is not None):
+            assert(frame == "child" or frame == "parent" or frame == "sensor")
+            frame_el.text = frame;
+        else:
+            frame_el.text = "child";
         measure_direction_el = lxml.etree.SubElement(force_torque_el, "measure_direction")
         if (directionChildToParent):
             measure_direction_el.text = "child_to_parent"
         else:
             measure_direction_el.text = "parent_to_child"
-
+        sensor_el.append(origin_el);
         return sensor_el;
 
     def getURDFSensor(self, linkName, sensorType, sensorName, origin_el):
@@ -1871,7 +1892,7 @@ class URDFGazeboSensorsGenerator:
     def __init__(self):
         self.dummy = ""
 
-    def getURDFForceTorque(self, jointName, sensorName, directionChildToParent, sensorBlobs, updateRate=100):
+    def getURDFForceTorque(self, jointName, sensorName, directionChildToParent, sensorBlobs, frame, pose, updateRate=100):
         gazebo_el = lxml.etree.Element("gazebo", reference=jointName)
         sensor_el = lxml.etree.SubElement(gazebo_el, "sensor")
         sensor_el.set("name", sensorName);
@@ -1882,7 +1903,13 @@ class URDFGazeboSensorsGenerator:
         sensor_el.set("type", "force_torque");
         force_torque_el = lxml.etree.SubElement(sensor_el, "force_torque")
         frame_el = lxml.etree.SubElement(force_torque_el, "frame")
-        frame_el.text = "child";
+        if (frame is not None):
+            assert(frame == "child" or frame == "parent" or frame == "sensor")
+            frame_el.text = frame;
+        else:
+            frame_el.text = "child";
+        pose_el = lxml.etree.SubElement(sensor_el, "pose");
+        pose_el.text = pose;
         measure_direction_el = lxml.etree.SubElement(force_torque_el, "measure_direction")
         if (directionChildToParent):
             measure_direction_el.text = "child_to_parent"
