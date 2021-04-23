@@ -34,16 +34,21 @@ pip install lxml numpy pyyaml catkin_pkg
 ~~~
 
 #### Debian/Ubuntu
+
+**As the installation procedure at this moment suggest to install `pip` packages at the system level via administrative priviliges (such as `sudo`) at this moment it is suggest to follow it only on a dedicated environment, and not in your main development machine. See https://stackoverflow.com/a/22517157/1379427 for more details.**
+
+
 ##### Install dependencies
 Install the necessary dependencies with apt-get:
 ~~~
 sudo apt-get install python-lxml python-yaml python-numpy python-setuptools python-catkin-pkg
 ~~~
 
-You can install `urdf_parser_py` from its git repository:
+You can install `urdf_parser_py` from its git repository. Note that due to some regression in recent versions on the default branch of  `urdf_parser_py` (see https://github.com/robotology/simmechanics-to-urdf/issues/36) it is recommended to use a specific commit of `urdf_parser_py` that is known to work, https://github.com/ros/urdf_parser_py/commit/31474b9baaf7c3845b40e5a9aa87d5900a2282c3 :
 ~~~
 git clone https://github.com/ros/urdf_parser_py
 cd urdf_parser_py
+git checkout 31474b9baaf7c3845b40e5a9aa87d5900a2282c3
 sudo python setup.py install
 ~~~
 
