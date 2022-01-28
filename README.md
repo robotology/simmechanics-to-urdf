@@ -143,6 +143,7 @@ The parameter accepted by the script are documented in the following.
 | `scale` | String |  None | If this parameter is defined, the scale attribute of the mesh in the URDF will be set to its value. Example: "0.01 0.01 0.01" - if your meshes were saved using centimeters as units instead of meters.  |
 | `stringToRemoveFromMeshFileName` | String |  None | This parameter allows to specify a string that will be removed from the mesh file names. Example: "_prt"  |
 | `assignedCollisionGeometry` | Array |  None | Structure for redefining the collision geometry for a given link.  |
+| `assignedColors` | Map |  {} (Empty Map) | If a link is in this map, the color found in the SimMechanics file is substituted with the one passed through this map. The color is represented by a 4 element vector of containing numbers from 0 to 1 representing the red, green, blue and alpha component.  |
 
 ###### Assigned collision geometries (keys of elements of `assignedCollisionGeometry`)
 | Attribute name   | Type   | Default Value | Description  |

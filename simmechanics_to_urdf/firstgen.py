@@ -498,6 +498,7 @@ class Converter:
 
         # Get map of links for which we explicitly assign the mass
         self.assignedMasses = configuration.get('assignedMasses', {})
+        self.assignedColors = configuration.get('assignedColors', {})
 
         # Get map of links for which we explicitly assign the mass
         self.assignedInertiasMap = {}
@@ -1113,7 +1114,10 @@ class Converter:
             # Define Material
             visual.material = urdf_parser_py.urdf.Material()
             # Use specified color, if exists. Otherwise, get random color
-            if 'color' in linkdict:
+            if id in self.assignedColors.keys():
+                cname = "%s_color" % id
+                (r, g, b, a) = self.assignedColors[id]
+            elif 'color' in linkdict:
                 cname = "%s_color" % id
                 (r, g, b, a) = linkdict['color']
             else:
