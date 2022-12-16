@@ -431,11 +431,30 @@ class Converter:
                 # we will add the full tutple (frameReferenceLink,frameName) later
                 self.exportedFramesMap[exported_frame["frameName"]] = exported_frame;
 
+
         # Augment the exported frames with sensors for which the exportFrameInURDF option is enabled
-        # for ftSens in self.forceTorqueSensors:
-        #    if( ftSens["exportFrameInURDF"] ):
-        #        exported_frame = {}
-        #        exported_frame["frameName"]
+        for ftSens in self.forceTorqueSensors:
+            if( (ftSens.get("exportFrameInURDF") is not None) and ftSens["exportFrameInURDF"] ):
+                if ((ftSens.get("frameName") is None) or (ftSens.get("linkName") is None)):
+                    print("Error: missing frameName or linkName")
+                    assert (False)
+                exported_frame = {}
+                exported_frame["frameName"] = ftSens["frameName"]
+                if (ftSens.get("exportedFrameName") is not None):
+                    exported_frame["exportedFrameName"] = ftSens["exportedFrameName"];
+                elif(ftSens.get("sensorName") is not None):
+                    exported_frame["exportedFrameName"] = ftSens["sensorName"];
+                else:
+                    exported_frame["exportedFrameName"] = ftSens["jointName"];
+
+                if (ftSens.get("frameReferenceLink") is not None):
+                    exported_frame["frameReferenceLink"] = ftSens["frameReferenceLink"];
+                else:
+                    exported_frame["frameReferenceLink"] = ftSens["linkName"];
+
+                self.exportedFramesMap[
+                    (exported_frame["frameReferenceLink"], exported_frame["frameName"])] = exported_frame;
+
 
 
         # Get default parameters in "sensors" list
@@ -1779,7 +1798,7 @@ def toGazeboPose(offset, quaternion):
 def toGazeboPoseFromEuler(offset, rpy):
     """Convert an offset + Euler angles to a 6x1 Gazebo pose string"""
     pose = str(offset[0]) + " " + str(offset[1]) + " " + str(offset[2]) + " " + str(rpy[0]) + " " + str(rpy[1]) + " " + str(rpy[2]);
-                                                                                                        
+
     return pose;
 
 def toURDFOriginXMLElement(offset, quaternion):
