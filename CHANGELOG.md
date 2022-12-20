@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed version number in setup.py ().
+- Fixed version number in setup.py (https://github.com/robotology/simmechanics-to-urdf/pull/54).
 
 ## [0.4.0] - 2022-12-20
 
