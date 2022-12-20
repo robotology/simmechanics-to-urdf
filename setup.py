@@ -5,11 +5,11 @@ from setuptools import setup, find_packages
 
 
 setup(name='simmechanics_to_urdf',
-      version='0.3.0',
+      version='0.4.1',
       description='Converts SimMechanics XML to URDF',
       author='Silvio Traversaro, David V. Lu',
       author_email='pegua1@gmail.com',
-      url='https://github.com/robotology-playground/simmechanics-to-urdf',
+      url='https://github.com/robotology/simmechanics-to-urdf',
       packages=['simmechanics_to_urdf'],
       licence='BSD',
       classifiers=[
