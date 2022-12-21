@@ -219,7 +219,7 @@ this script will output two different elements for each sensor:
 | `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame (as if the sensor frame was added to the `exportedFrames` array). |
 | `exportedFrameName` | String | `sensorName` if defined `jointName` otherwise | Name of the URDF link exported by the `exportFrameInURDF` option |
 | `frameName`       | String |  empty  | Name of the frame in which the sensor measure is expressed. Mandatory if `exportFrameInURDF` is set to yes. |
-| `linkName`         | String  |  empty      | Name of the Link at which the sensor is rigidly attached. Mandatory if `exportFrameInURDF` is set to yes. |
+| `linkName`         | String  |  empty      | Name of the parent link at which the sensor is rigidly attached. Mandatory if `exportFrameInURDF` is set to yes. |
 | `frameReferenceLink`    | String  | `linkName`    | link at which the sensor frame is attached (to make sense, this link should be rigidly attached to the `linkName`. By default `referenceLink` is assumed to be `linkName`.
 | `frame` | String | empty | The value of this element may be one of: child, parent, or sensor. It is the frame in which the forces and torques should be expressed. The values parent and child refer to the parent or child links of the joint. The value sensor means the measurement is rotated by the rotation component of the `<pose>` of this sensor. The translation component of the pose has no effect on the measurement. |
 | `sensorBlobs` | String | empty | Array of strings (possibly on multiple lines) represeting complex XML blobs that will be included as child of the `<sensor>` element of type "force_torque" |
