@@ -3,7 +3,7 @@ simmechanics-to-urdf [![Build Status](https://travis-ci.org/robotology/simmechan
 
 
 
-This tool was developed to convert CAD models to URDF ( http://wiki.ros.org/urdf )  models semi-automatically. It makes use of the XML files exported by the SimMechanics Link . Mathworks, makers of SimMechanics, have developed plugins for a couple of leading CAD programs, including SolidWorks, ProEngineer and Inventor. 
+This tool was developed to convert CAD models to URDF ( http://wiki.ros.org/urdf )  models semi-automatically. It makes use of the XML files exported by the SimMechanics Link . Mathworks, makers of SimMechanics, have developed plugins for a couple of leading CAD programs, including SolidWorks, ProEngineer and Inventor.
 
 More specifically, this library at the moment just support first-generation SimMechanics XML files, that in MathWorks documentation are also referred as `PhysicalModelingXMLFile` .
 
@@ -24,10 +24,10 @@ Based on the [original version](http://wiki.ros.org/simmechanics_to_urdf) by [Da
 This conversion script uses Python, so you have to install Python for Windows:
 https://www.python.org/downloads/windows/ .
 
-#### OS X 
-##### Install dependencies 
-To install the dependencies, a easy way is to have installed `pip`, that is installed 
-if you use the python version provided by homebrew. 
+#### OS X
+##### Install dependencies
+To install the dependencies, a easy way is to have installed `pip`, that is installed
+if you use the python version provided by homebrew.
 If you have `pip` installed you can get all necessary dependencies with:
 ~~~
 pip install lxml numpy pyyaml catkin_pkg
@@ -61,7 +61,7 @@ sudo python setup.py install
 ~~~
 
 ## How it works
-The SimMechanics Link creates an XML file (PhysicalModelingXMLFile) and a collection of STL files. The XML describes all of the bodies, reference frames, inertial frames and joints for the model. The simmechanics_to_urdf script takes this information and converts it to a URDF. However, there are some tricks and caveats, which can maneuvered using a couple of parameters files. Not properly specifing this parameters files will result in a model that looks correct when not moving, but possibly does not move correctly. 
+The SimMechanics Link creates an XML file (PhysicalModelingXMLFile) and a collection of STL files. The XML describes all of the bodies, reference frames, inertial frames and joints for the model. The simmechanics_to_urdf script takes this information and converts it to a URDF. However, there are some tricks and caveats, which can maneuvered using a couple of parameters files. Not properly specifing this parameters files will result in a model that looks correct when not moving, but possibly does not move correctly.
 
 ### Tree vs. Graph
 
@@ -73,25 +73,25 @@ This creates two problems.
 
   - The graph must be converted into a tree structure. This is done by means of a breadth first traversal of the graph, starting from the root link. However, this sometimes leads to improper dependencies, which can be corrected with the parameter file, as described below.
 
-  - Fixed joints in CAD are not always fixed in the exported XML. To best understand this, consider the example where you have bodies A, B and C, all connected to each other. If C is connected to A in such a way that it is constrained in the X and Z dimensions, and C is connected to B so that it is constrained in the Y dimension, then effectively, C is fixed/welded to both of those bodies. Thus removing the joint between B and C (which is needed to make the tree structure) frees up the joint. This also can be fixed with the parameter file. 
+  - Fixed joints in CAD are not always fixed in the exported XML. To best understand this, consider the example where you have bodies A, B and C, all connected to each other. If C is connected to A in such a way that it is constrained in the X and Z dimensions, and C is connected to B so that it is constrained in the Y dimension, then effectively, C is fixed/welded to both of those bodies. Thus removing the joint between B and C (which is needed to make the tree structure) frees up the joint. This also can be fixed with the parameter file.
 
 ## Use the script
 You can call the script:
 ~~~
 simmechanics_to_urdf {SimMechanics XML filename} --yaml [yaml_configfile] --csv-joint csv_joints_configfile --output {xml|graph|none}
 ~~~
-The `--output` options defines the output. Selecting graph the script will output a graphviz .dot representation 
+The `--output` options defines the output. Selecting graph the script will output a graphviz .dot representation
 of the SimMechanics model, useful for debugging, while selecting xml it will output the converted URDF.
 
 ### Configuration files
 
 #### YAML Parameter File
 The YAML format is used to pass parameters to the script to customized the conversion process.
-The file is loaded using the Python (yaml)[http://pyyaml.org/] module. 
-The parameter accepted by the script are documented in the following. 
+The file is loaded using the Python (yaml)[http://pyyaml.org/] module.
+The parameter accepted by the script are documented in the following.
 
 
-##### Naming Parameters 
+##### Naming Parameters
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
 | `robotName`     | String     | model name set in the file PhysicalModelingXMLFile | Used for setting the model name, i.e. the parameter `<robot name="...">` in the `URDF` model file. |
@@ -110,7 +110,7 @@ The parameter accepted by the script are documented in the following.
 |:----------------:|:------:|:-------------:|:-------------:|
 | `epsilon`        | Float | 4*(Machine *eps*) | Set a custom value for testing whether a number is close to zero |
 
-##### Frame Parameters 
+##### Frame Parameters
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
 | `linkFrames`       | Array | empty | Structure mapping the link names to the displayName of their desired frame. Unfortunatly in URDF the link frame origin placement is not free, but it is constrained to be placed on the parent joint axis, hence this option is for now reserved to the root link and to links connected to their parent by a fixed joint |
@@ -134,7 +134,7 @@ The parameter accepted by the script are documented in the following.
 | `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportedFrames` option |
 | `additionalTransformation` | List | Empty | Additional transformation applied to the exported frame, it is expressed as [x, y, z, r, p, y] according to the semantics and units of the [SDF convention](http://sdformat.org/tutorials?tut=specify_pose&cat=specification&) for expressing poses. If the unmodified transformation of the additionalFrame is indicated as linkFrame_H_additionalFrameOld, this parameter specifies the additionalFrameOld_H_additionalFrame transform, and the final transform exported in the URDF is computed as linkFrame_H_additionalFrame = linkFrame_H_additionalFrameOld*additionalFrameOld_H_additionalFrame . If not specified it is assume to be the `[0, 0, 0, 0, 0, 0]` element and the specified frame is exported in the URDF unmodified. |
 
-##### Mesh Parameters 
+##### Mesh Parameters
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
 | `filenameformat` |  String | %s  | Used for translating the filenames in the exported XML to the URDF filenames, using a formatting string. Example: "package://my_package//folder/%sb" - resolves to the package name and adds a "b" at the end to indicate a binary stl. |
@@ -152,7 +152,7 @@ The parameter accepted by the script are documented in the following.
 | `geometricShape`  | Dictionary  |  Mandatory  | This dictionary contains the parameters used to define the type and the position of the geometric shape. In particular we have: <ul><li>shape: geometric shape type. Supported "box", "cylinder", "sphere". </li><li>type dependent geometric shape parameters. Refer to [SDF Geometry](http://sdformat.org/spec?elem=geometry). </li><li>origin: String defining the pose of the geometric shape with respect to the `linkFrame`. </li></ul> |
 
 ~~~
-assignedCollisionGeometry: 
+assignedCollisionGeometry:
   - linkName: r_foot
     geometricShape:
       shape: cylinder
@@ -184,11 +184,11 @@ Parameters related to the inertia parameters of a link
 | `zz`      | String | empty  | If defined, change the Izz value of the inertia matrix of the link. Unit of measure: Kg*m^2 . |
 
 ~~~
-assignedMasses: 
+assignedMasses:
   link1: 1
   link2: 3
 
-assignedInertias: 
+assignedInertias:
   - linkName: link1
     xx: 0.0001
   - linkName: link1
@@ -198,11 +198,11 @@ assignedInertias:
 ~~~
 
 ##### Sensors Parameters
-Sensor information can be expressed using arrays of sensor options. 
-Note that given that the URDF still does not support an official format for expressing sensor information, 
-this script will output two different elements for each sensor: 
-* a `<gazebo>` element, necessary to simulate the sensor in Gazebo when loading the URDF, as documented in http://gazebosim.org/tutorials?tut=ros_gzplugins . 
-* a more URDF-like `<sensor>` element, in particular the variant supported by the iDynTree library, as documented in https://github.com/robotology/idyntree/blob/master/doc/model_loading.md . 
+Sensor information can be expressed using arrays of sensor options.
+Note that given that the URDF still does not support an official format for expressing sensor information,
+this script will output two different elements for each sensor:
+* a `<gazebo>` element, necessary to simulate the sensor in Gazebo when loading the URDF, as documented in http://gazebosim.org/tutorials?tut=ros_gzplugins .
+* a more URDF-like `<sensor>` element, in particular the variant supported by the iDynTree library, as documented in https://github.com/robotology/idyntree/blob/master/doc/model_loading.md .
 
 
 | Attribute name   | Type   | Default Value | Description  |
@@ -217,13 +217,15 @@ this script will output two different elements for each sensor:
 | `directionChildToParent` | Bool | True | True if the sensor measures the force excerted by the child on the parent, false otherwise |
 | `sensorName`      | String   | jointName | Name of the sensor, to be used in the output URDF file |
 | `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame (as if the sensor frame was added to the `exportedFrames` array). |
-| `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportFrameInURDF` option |
-| `frameName`       | String |  empty  | Name of the frame in which the sensor measure is expressed. |
+| `exportedFrameName` | String | `sensorName` if defined `jointName` otherwise | Name of the URDF link exported by the `exportFrameInURDF` option |
+| `frameName`       | String |  empty  | Name of the frame in which the sensor measure is expressed. Mandatory if `exportFrameInURDF` is set to yes. |
+| `linkName`         | String  |  empty      | Name of the parent link at which the sensor is rigidly attached. Mandatory if `exportFrameInURDF` is set to yes. |
+| `frameReferenceLink`    | String  | `linkName`    | link at which the sensor frame is attached (to make sense, this link should be rigidly attached to the `linkName`. By default `referenceLink` is assumed to be `linkName`.
 | `frame` | String | empty | The value of this element may be one of: child, parent, or sensor. It is the frame in which the forces and torques should be expressed. The values parent and child refer to the parent or child links of the joint. The value sensor means the measurement is rotated by the rotation component of the `<pose>` of this sensor. The translation component of the pose has no effect on the measurement. |
 | `sensorBlobs` | String | empty | Array of strings (possibly on multiple lines) represeting complex XML blobs that will be included as child of the `<sensor>` element of type "force_torque" |
 
-Note that for now the FT sensors sensor frame is required to be coincident with child link frame, due 
-to URDF limitations. 
+Note that for now the FT sensors sensor frame is required to be coincident with child link frame, due
+to URDF limitations.
 
 ###### Generic Sensors Parameters (keys of elements of `sensors`)
 | Attribute name   | Type   | Default Value | Description  |
@@ -232,24 +234,24 @@ to URDF limitations.
 | `frameName`        | String  |  empty      | `displayName` of the frame in which the sensor measure is expressed. The selected frame must be attached to the `referenceLink` link. If empty the frame used for the sensor is coincident with the link frame. |
 | `frameReferenceLink`    | String  | linkName    | link at which the sensor frame is attached (to make sense, this link should be rigidly attached to the `linkName`. By default `referenceLink` is assumed to be `linkName`.
 | `sensorName`      | String   | LinkName_FrameName | Name of the sensor, to be used in the output URDF file |
-| `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame (as if the sensor frame was added to the `exportedFrames` array) | 
-| `exportedFrameName` | String | sensorName+"_frame" | Name of the URDF link exported by the `exportFrameInURDF` option | 
-| `sensorType` | String | Mandatory | Type of sensor. Supported: "altimeter", "camera", "contact", "depth", "gps", "gpu_ray", "imu", "logical_camera", "magnetometer", "multicamera", "ray", "rfid", "rfidtag", "sonar", "wireless_receiver", "wireless_transmitter" | 
-| `updateRate` | String | Mandatory | Number representing the update rate of the sensor. Expressed in [Hz]. | 
-| `sensorBlobs` | String | empty | Array of strings (possibly on multiple lines) represeting complex XML blobs that will be included as child of the `<sensor>` element | 
+| `exportFrameInURDF` | Bool   | False        | If true, export a fake URDF link whose frame is coincident with the sensor frame (as if the sensor frame was added to the `exportedFrames` array) |
+| `exportedFrameName` | String | sensorName | Name of the URDF link exported by the `exportFrameInURDF` option |
+| `sensorType` | String | Mandatory | Type of sensor. Supported: "altimeter", "camera", "contact", "depth", "gps", "gpu_ray", "imu", "logical_camera", "magnetometer", "multicamera", "ray", "rfid", "rfidtag", "sonar", "wireless_receiver", "wireless_transmitter" |
+| `updateRate` | String | Mandatory | Number representing the update rate of the sensor. Expressed in [Hz]. |
+| `sensorBlobs` | String | empty | Array of strings (possibly on multiple lines) represeting complex XML blobs that will be included as child of the `<sensor>` element |
 
-##### Mirrored Inertia Parameters 
-SimMechanics Link has some problems dealing with mirrored mechanism, in particularly when dealing with exporting inertia information. For this reason we provide 
+##### Mirrored Inertia Parameters
+SimMechanics Link has some problems dealing with mirrored mechanism, in particularly when dealing with exporting inertia information. For this reason we provide
 an option to use for some links not the inertial information (mass, center of mass, inertia matrix) provided in the SimMechanics XML, but instead to "mirror"
-the inertia information of some other link, relyng on the simmetry of the model. 
+the inertia information of some other link, relyng on the simmetry of the model.
 
-TODO document this part 
+TODO document this part
 
-##### XML Blobs options 
-IF you use extensions of URDF, we frequently want to add non-standard tags as child of the `<robot>` root element. 
-Using the XMLBlobs option, you can pass an array of strings (event on multiple lines) represeting complex XML blobs that you 
-want to include in the converted URDF file. This will be included without modifications in the converted URDF file. 
-Note that every blob must have only one root element. 
+##### XML Blobs options
+IF you use extensions of URDF, we frequently want to add non-standard tags as child of the `<robot>` root element.
+Using the XMLBlobs option, you can pass an array of strings (event on multiple lines) represeting complex XML blobs that you
+want to include in the converted URDF file. This will be included without modifications in the converted URDF file.
+Note that every blob must have only one root element.
 
 | Attribute name   | Type   | Default Value | Description  |
 |:----------------:|:---------:|:------------:|:-------------:|
@@ -257,14 +259,14 @@ Note that every blob must have only one root element.
 
 #### CSV  Parameter File
 Using the `--csv-joints` options it is possible to load some joint-related information from a csv
-file. The rationale for using CSV over YAML for some information related to the model (for example joint limits) is to use a format that it is easier to modify  using common spreadsheet tools like Excel/LibreOffice Calc, that can be easily used also by people without a background in computer science. 
+file. The rationale for using CSV over YAML for some information related to the model (for example joint limits) is to use a format that it is easier to modify  using common spreadsheet tools like Excel/LibreOffice Calc, that can be easily used also by people without a background in computer science.
 
 ##### Format
-The CSV file is loaded by loaded by the python `csv` module, so every dialect supported 
+The CSV file is loaded by loaded by the python `csv` module, so every dialect supported
 by the [`csv.Sniffer()`](https://docs.python.org/library/csv.html#csv.Sniffer) is automatically
-supported by `simmechanics-to-urdf`. 
+supported by `simmechanics-to-urdf`.
 
-The CSV file is formed by a header line followed by several content lines, 
+The CSV file is formed by a header line followed by several content lines,
 as in this example:
 ~~~
 joint_name,lower_limit,upper_limit
