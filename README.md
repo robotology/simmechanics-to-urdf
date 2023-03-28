@@ -9,6 +9,8 @@ More specifically, this library at the moment just support first-generation SimM
 
 Based on the [original version](http://wiki.ros.org/simmechanics_to_urdf) by [David V. Lu!!](http://www.cse.wustl.edu/~dvl1/).
 
+**Warning: this tool only works with [MATLAB versions <= R2017b](https://github.com/robotology/simmechanics-to-urdf/issues/39) and [PTC Creo versions <= 8](https://github.com/robotology/simmechanics-to-urdf/issues/55). If you need to use either a newer version of MATLAB or a newer version of PTC Creo, you cannot use this tool.**
+
 #### Dependencies
 - [Python](https://www.python.org/)
 - [lxml](http://lxml.de/)
