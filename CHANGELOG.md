@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2024-01-25
+
 ### Add
 - Add the possibility to export the frame coincident with the ft sensor frame (https://github.com/robotology/simmechanics-to-urdf/pull/53).
 
