@@ -451,7 +451,11 @@ class Converter:
                     exported_frame["frameReferenceLink"] = ftSens["frameReferenceLink"];
                 else:
                     exported_frame["frameReferenceLink"] = ftSens["linkName"];
-
+                map_key = (exported_frame["frameReferenceLink"], exported_frame["frameName"]);
+                # If the frame has been exported with a transformation, add it to the exported frame on sensor side
+                if (map_key in self.exportedFramesMap.keys() and ("additionalTransformation" in self.exportedFramesMap[map_key].keys())):
+                    existing_exported_frame = self.exportedFramesMap[map_key];
+                    exported_frame["additionalTransformation"] = existing_exported_frame["additionalTransformation"];
                 self.exportedFramesMap[
                     (exported_frame["frameReferenceLink"], exported_frame["frameName"])] = exported_frame;
 
@@ -495,7 +499,11 @@ class Converter:
                     exported_frame["frameReferenceLink"] = sensor["frameReferenceLink"];
                 else:
                     exported_frame["frameReferenceLink"] = sensor["linkName"];
-
+                map_key = (exported_frame["frameReferenceLink"], exported_frame["frameName"]);
+                # If the frame has been exported with a transformation, add it to the exported frame on sensor side
+                if (map_key in self.exportedFramesMap.keys() and ("additionalTransformation" in self.exportedFramesMap[map_key].keys())):
+                    existing_exported_frame = self.exportedFramesMap[map_key];
+                    exported_frame["additionalTransformation"] = existing_exported_frame["additionalTransformation"];
                 self.exportedFramesMap[
                     (exported_frame["frameReferenceLink"], exported_frame["frameName"])] = exported_frame;
 

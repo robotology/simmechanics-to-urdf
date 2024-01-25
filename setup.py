@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='simmechanics_to_urdf',
-      version='0.4.1',
+      version='0.4.2',
       description='Converts SimMechanics XML to URDF',
       author='Silvio Traversaro, David V. Lu',
       author_email='pegua1@gmail.com',
