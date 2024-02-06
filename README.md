@@ -9,7 +9,13 @@ More specifically, this library at the moment just support first-generation SimM
 
 Based on the [original version](http://wiki.ros.org/simmechanics_to_urdf) by [David V. Lu!!](http://www.cse.wustl.edu/~dvl1/).
 
-**Warning: this tool only works with [MATLAB versions <= R2017b](https://github.com/robotology/simmechanics-to-urdf/issues/39) and [PTC Creo versions <= 8](https://github.com/robotology/simmechanics-to-urdf/issues/55). If you need to use either a newer version of MATLAB or a newer version of PTC Creo, you cannot use this tool.**
+> [!WARNING]
+> This tool only works with [MATLAB versions <= R2017b](https://github.com/robotology/simmechanics-to-urdf/issues/39) and [PTC Creo versions <= 8](https://github.com/robotology/simmechanics-to-urdf/issues/55). If you need to use either a newer version of MATLAB or a newer version of PTC Creo, you cannot use this tool.
+> 
+> No work is planned to update this tool to work with more recent MATLAB or Creo versions. Depending on the specific CAD tool you are using, you suggest you to use one of the following tools:
+> * Creo: [creo2urdf](https://github.com/icub-tech-iit/creo2urdf)
+> * SolidWorks: [solidworks_urdf_exporter](https://github.com/ros/solidworks_urdf_exporter)
+> * Autodesk Inventor: No tool is known to us at the moment, if you have any tool suggestion feel free to [open an issue](https://github.com/robotology/simmechanics-to-urdf/issues/new) suggesting it.
 
 #### Dependencies
 - [Python](https://www.python.org/)
