@@ -1356,16 +1356,28 @@ class Converter:
 
                 rpy = list(euler_from_quaternion(rot))
 
+                inertiaScaling = 1.0
+                if (id in self.assignedMasses):
+                    # if it is, we have to change the mass and scale
+                    # the inertia by multiplyng by new_mass/old_mass
+                    # (the COM instead don't need any modification)
+                    oldMass = inertial.mass;
+                    newMass = self.assignedMasses[id];
+                    inertial.mass = newMass;
+                    inertiaScaling = newMass / oldMass;
+
                 # Save inertia matrix
                 # sys.stderr.write("Inertia RPY of link " + str(id) + "is " + str(rpy) + "\n");
                 # sys.stderr.write("Inertia matrix of link " + str(id) + "is " + str(simmetryReferenceLink_Inertia) + "\n");
                 inertial.inertia = urdf_parser_py.urdf.Inertia()
-                inertial.inertia.ixx = simmetryReferenceLink_Inertia[0, 0];
-                inertial.inertia.ixy = simmetryReferenceLink_Inertia[0, 1];
-                inertial.inertia.ixz = simmetryReferenceLink_Inertia[0, 2];
-                inertial.inertia.iyy = simmetryReferenceLink_Inertia[1, 1];
-                inertial.inertia.iyz = simmetryReferenceLink_Inertia[1, 2]
-                inertial.inertia.izz = simmetryReferenceLink_Inertia[2, 2];
+                inertial.inertia.ixx = inertiaScaling*simmetryReferenceLink_Inertia[0, 0];
+                inertial.inertia.ixy = inertiaScaling*simmetryReferenceLink_Inertia[0, 1];
+                inertial.inertia.ixz = inertiaScaling*simmetryReferenceLink_Inertia[0, 2];
+                inertial.inertia.iyy = inertiaScaling*simmetryReferenceLink_Inertia[1, 1];
+                inertial.inertia.iyz = inertiaScaling*simmetryReferenceLink_Inertia[1, 2]
+                inertial.inertia.izz = inertiaScaling*simmetryReferenceLink_Inertia[2, 2];
+
+
 
                 # Save COM and Inertia orientation
                 inertial.origin = urdf_parser_py.urdf.Pose(zero(off), zero(rpy))
